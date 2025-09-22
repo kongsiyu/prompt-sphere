@@ -1,9 +1,9 @@
 ---
 name: ai-system-prompt-generator
-status: backlog
+status: in-progress
 created: 2025-09-22T06:59:00Z
-updated: 2025-09-22T08:17:15Z
-progress: 0%
+updated: 2025-09-22T14:55:53Z
+progress: 10%
 prd: .claude/prds/ai-system-prompt-generator.md
 github: https://github.com/kongsiyu/prompt-sphere/issues/2
 ---
