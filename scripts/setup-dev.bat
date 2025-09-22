@@ -274,6 +274,6 @@ echo      - make test       # Run tests
 echo      - make lint       # Run linting
 echo      - make help       # See all commands
 echo.
-echo [INFO] Happy coding! 🚀
+echo [INFO] Happy coding! ?
 
 pause
