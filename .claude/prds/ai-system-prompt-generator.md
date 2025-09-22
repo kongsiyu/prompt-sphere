@@ -212,7 +212,7 @@ An enterprise-grade intelligent system that helps developers and business users 
 - **Frontend**: React-based web application with responsive design
 - **Backend**: Node.js/Python API server with microservices architecture
 - **AI Processing**: Integration with LLM APIs for prompt generation and QA
-- **Database**: PostgreSQL for structured data, Redis for caching
+- **Database**: Mysql for structured data, Redis for caching
 - **Authentication**: Integration with enterprise identity management
 
 ### Data Flow
