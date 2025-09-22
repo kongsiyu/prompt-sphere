@@ -41,6 +41,20 @@ class Settings(BaseSettings):
         alias="ACCESS_TOKEN_EXPIRE_MINUTES"
     )
 
+    # Database
+    database_url: str = Field(
+        default="mysql+aiomysql://root:password@localhost:3306/prompt_sphere",
+        description="Database connection URL",
+        alias="DATABASE_URL"
+    )
+    database_host: str = Field(default="localhost", description="Database host", alias="DB_HOST")
+    database_port: int = Field(default=3306, description="Database port", alias="DB_PORT")
+    database_user: str = Field(default="root", description="Database user", alias="DB_USER")
+    database_password: str = Field(default="password", description="Database password", alias="DB_PASSWORD")
+    database_name: str = Field(default="prompt_sphere", description="Database name", alias="DB_NAME")
+    database_pool_size: int = Field(default=10, description="Database connection pool size", alias="DB_POOL_SIZE")
+    database_max_overflow: int = Field(default=20, description="Database max overflow connections", alias="DB_MAX_OVERFLOW")
+
     # External APIs
     openai_api_key: Optional[str] = Field(default=None, description="OpenAI API key", alias="OPENAI_API_KEY")
     anthropic_api_key: Optional[str] = Field(default=None, description="Anthropic API key", alias="ANTHROPIC_API_KEY")
