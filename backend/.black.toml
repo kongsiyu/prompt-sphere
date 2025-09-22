@@ -1,0 +1,53 @@
+# Black code formatting configuration
+# Documentation: https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html
+
+[tool.black]
+# Line length
+line-length = 88
+
+# Python versions to target
+target-version = ['py311', 'py312']
+
+# Files to include
+include = '\.pyi?$'
+
+# Extended exclusions
+extend-exclude = '''
+/(
+  # Directories to exclude
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.nox
+  | \.tox
+  | \.venv
+  | \.pytest_cache
+  | build
+  | dist
+  | __pycache__
+  | migrations
+)/
+'''
+
+# Skip string normalization (keep quotes as-is)
+skip-string-normalization = false
+
+# Skip magic trailing comma
+skip-magic-trailing-comma = false
+
+# Preview mode for upcoming features
+preview = false
+
+# Force exclude specific files
+force-exclude = '''
+/(
+  \.git/
+  | \.venv/
+  | __pycache__/
+  | \.mypy_cache/
+  | \.pytest_cache/
+  | build/
+  | dist/
+)/
+'''
