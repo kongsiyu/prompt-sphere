@@ -1,0 +1,26 @@
+# Development overrides for docker-compose.yml
+# This file is automatically loaded by docker-compose for local development
+
+version: '3.8'
+
+services:
+  frontend:
+    # Development specific environment variables
+    environment:
+      - VITE_DEV_MODE=true
+      - VITE_API_URL=http://localhost:8000  # Use localhost for local development
+    # Additional development ports for debugging
+    ports:
+      - "3000:3000"
+      - "3001:3001"  # For potential dev server management
+
+  backend:
+    # Development specific environment variables
+    environment:
+      - DEBUG=true
+      - RELOAD=true
+      - LOG_LEVEL=debug
+    # Additional development ports for debugging
+    ports:
+      - "8000:8000"
+      - "5678:5678"  # For potential Python debugger
