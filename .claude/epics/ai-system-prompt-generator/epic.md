@@ -2,6 +2,7 @@
 name: ai-system-prompt-generator
 status: backlog
 created: 2025-09-22T06:59:00Z
+updated: 2025-09-22T08:17:15Z
 progress: 0%
 prd: .claude/prds/ai-system-prompt-generator.md
 github: https://github.com/kongsiyu/prompt-sphere/issues/2
@@ -11,18 +12,19 @@ github: https://github.com/kongsiyu/prompt-sphere/issues/2
 
 ## Overview
 
-A React/Node.js web application that leverages LLM APIs to transform natural language descriptions into high-quality AI agent prompts. The system uses a two-stage approach: NLP parsing to generate dynamic forms, followed by conversational optimization with dual AI roles (PE Engineer + PEQA) for quality assurance.
+A React/Python web application that leverages LLM APIs to transform natural language descriptions into high-quality AI agent prompts. The system uses a two-stage approach: NLP parsing to generate dynamic forms, followed by conversational optimization with dual AI roles (PE Engineer + PEQA) for quality assurance. Built with Python backend for optimal AI performance and FastAPI for modern, high-performance API development.
 
 ## Architecture Decisions
 
 - **Frontend**: React with TypeScript for type safety and component reusability
-- **Backend**: Node.js with Express for API layer, leveraging existing JavaScript ecosystem
-- **AI Framework**: LangChain for agent development and LLM orchestration
-- **LLM Provider**: 阿里百炼平台接入Qwen大模型 (Alibaba DashScope with Qwen models)
-- **Database**: MySQL for structured data with Redis for session/cache management
-- **Authentication**: JWT-based auth with 钉钉登录 (DingTalk OAuth integration)
-- **State Management**: React Query for server state, Zustand for client state
-- **Design Pattern**: Clean Architecture with LangChain agents for AI processing logic
+- **Backend**: Python with FastAPI for high-performance API layer and superior AI ecosystem integration
+- **AI Framework**: LangChain Python for agent development and LLM orchestration (full feature set)
+- **LLM Provider**: 阿里百炼平台接入Qwen大模型 (Alibaba DashScope Python SDK)
+- **Database**: MySQL with SQLAlchemy ORM for structured data, Redis for session/cache management
+- **Authentication**: JWT-based auth with 钉钉登录 (python-jose + DingTalk OAuth integration)
+- **Task Processing**: Celery with Redis for async AI processing and long-running tasks
+- **API Documentation**: FastAPI automatic OpenAPI/Swagger generation
+- **Design Pattern**: Clean Architecture with domain-driven design for AI agent orchestration
 
 ## Technical Approach
 
@@ -33,38 +35,42 @@ A React/Node.js web application that leverages LLM APIs to transform natural lan
 - **QualityDashboard**: Display PEQA scores and improvement suggestions
 - **TemplateLibrary**: Browsable collection of prompt templates
 
-### Backend Services
-- **AIAgentService**: LangChain-based agents for PE Engineer and PEQA roles using Qwen models
-- **DashScopeService**: 阿里百炼API integration and request management
-- **ParsingService**: Natural language analysis and form schema generation via LangChain
-- **PromptService**: Version management and optimization logic
-- **ExportService**: Markdown generation with metadata injection
-- **AuthService**: 钉钉OAuth authentication and user management
+### Backend Services (Python/FastAPI)
+- **AIAgentService**: LangChain Python agents for PE Engineer and PEQA roles using Qwen models
+- **DashScopeService**: 阿里百炼Python SDK integration and request management
+- **ParsingService**: Natural language analysis and dynamic form schema generation via LangChain
+- **PromptService**: Version management, optimization logic, and conversation history
+- **ExportService**: Markdown generation with metadata injection and templating
+- **AuthService**: 钉钉OAuth integration with JWT token management (python-jose)
+- **TaskService**: Celery-based async processing for long-running AI operations
 
 ### Infrastructure
 - **Container Deployment**: Docker with Kubernetes for scalability
-- **API Gateway**: Rate limiting and request routing
-- **Monitoring**: Application performance and AI API usage tracking
-- **Security**: Data encryption at rest/transit, audit logging
+- **API Gateway**: Rate limiting and request routing (FastAPI built-in middleware)
+- **Task Queue**: Redis as message broker for Celery workers
+- **Monitoring**: Application performance and AI API usage tracking (Prometheus + Grafana)
+- **Security**: Data encryption at rest/transit, audit logging, Pydantic data validation
+- **Documentation**: Auto-generated OpenAPI/Swagger docs via FastAPI
 
 ## Implementation Strategy
 
 ### Development Phases
-1. **Core Engine** (Month 1-2): AI integration, parsing, basic form generation
-2. **User Interface** (Month 2-3): React components, conversation flow
-3. **Quality System** (Month 3-4): PEQA integration, scoring, optimization
-4. **Enterprise Features** (Month 4-6): Auth, collaboration, templates
+1. **Core Engine** (Month 1-2): FastAPI foundation, LangChain Python integration, basic AI agent setup
+2. **User Interface** (Month 2-3): React components, API integration, conversation flow
+3. **Quality System** (Month 3-4): PEQA agent implementation, scoring algorithms, async optimization
+4. **Enterprise Features** (Month 4-6): 钉钉Auth, collaboration features, template management
 
 ### Risk Mitigation
-- **AI Reliability**: Implement circuit breakers and fallback responses
-- **Performance**: Async processing with job queues for long operations
-- **Cost Control**: AI API usage monitoring and request optimization
+- **AI Reliability**: Implement circuit breakers and fallback responses via LangChain error handling
+- **Performance**: Celery async processing with Redis for long-running AI operations
+- **Cost Control**: AI API usage monitoring and request optimization with caching
+- **Python Dependencies**: Virtual environment management and dependency pinning
 
 ### Testing Approach
-- **Unit Tests**: Core business logic and AI service abstractions
-- **Integration Tests**: End-to-end prompt generation workflows
-- **Load Tests**: Concurrent user scenarios and AI API rate limits
-- **Quality Tests**: PEQA scoring accuracy and consistency validation
+- **Unit Tests**: pytest for core business logic and AI service abstractions
+- **Integration Tests**: End-to-end prompt generation workflows with FastAPI TestClient
+- **Load Tests**: Concurrent user scenarios and AI API rate limits using locust
+- **Quality Tests**: PEQA scoring accuracy and consistency validation with test datasets
 
 ## Task Breakdown Preview
 
@@ -129,16 +135,16 @@ High-level task categories that will be created:
 
 ### Resource Requirements
 - **Frontend Developer**: 2 engineers (React, TypeScript, UI/UX implementation)
-- **Backend Developer**: 2 engineers (Node.js, API design, AI integration)
+- **Backend Developer**: 2 engineers (Python, FastAPI, LangChain, AI integration)
 - **DevOps Engineer**: 1 engineer (Infrastructure, deployment, monitoring)
-- **QA Engineer**: 1 engineer (Testing, validation, quality assurance)
+- **QA Engineer**: 1 engineer (pytest, testing, validation, quality assurance)
 
 ### Critical Path Items
-1. **AI API Integration** (Month 1): 阿里百炼DashScope + LangChain foundation
-2. **Core Parsing Logic** (Month 1-2): LangChain agents for form generation
-3. **Frontend Framework** (Month 2-3): React UI development
-4. **Quality System** (Month 3-4): PEQA agent integration and scoring
-5. **钉钉Authentication** (Month 4-5): OAuth integration for production readiness
+1. **Python Backend Setup** (Month 1): FastAPI + 阿里百炼DashScope Python SDK + LangChain foundation
+2. **Core Parsing Logic** (Month 1-2): LangChain Python agents for form generation
+3. **Frontend Framework** (Month 2-3): React UI development with FastAPI integration
+4. **Quality System** (Month 3-4): PEQA agent implementation and async scoring
+5. **钉钉Authentication** (Month 4-5): python-jose OAuth integration for production readiness
 
 ## Tasks Created
 - [ ] #3 - Project Setup and Environment Configuration (parallel: false)
