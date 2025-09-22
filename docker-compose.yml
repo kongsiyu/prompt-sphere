@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ai-prompt-generator-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount source code for hot reload
+      - ./frontend:/app
+      # Exclude node_modules to prevent conflicts
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true  # Enable file watching in Docker
+      - VITE_HOST=0.0.0.0
+      - VITE_API_URL=http://backend:8000
+    env_file:
+      - .env.local
+      - .env.development
+    networks:
+      - ai-prompt-network
+    stdin_open: true  # Keep STDIN open for interactive mode
+    tty: true         # Allocate a pseudo-TTY
+    restart: unless-stopped
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ai-prompt-generator-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount source code for hot reload
+      - ./backend:/app
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - DEBUG=true
+      - HOST=0.0.0.0
+      - PORT=8000
+    env_file:
+      - ./backend/.env.example
+    networks:
+      - ai-prompt-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/api/v1/health', timeout=10)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+networks:
+  ai-prompt-network:
+    driver: bridge
+    name: ai-prompt-network
+
+volumes:
+  frontend_node_modules:
+  backend_venv:

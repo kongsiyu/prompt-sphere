@@ -1,0 +1,94 @@
+# Flake8 configuration for Python linting
+# Documentation: https://flake8.pycqa.org/en/latest/user/configuration.html
+
+[flake8]
+# Maximum line length (match Black's default)
+max-line-length = 88
+
+# Maximum complexity score
+max-complexity = 10
+
+# Error codes to ignore
+ignore =
+    # E203: whitespace before ':' (conflicts with Black)
+    E203,
+    # E501: line too long (handled by Black)
+    E501,
+    # W503: line break before binary operator (conflicts with Black)
+    W503,
+    # E231: missing whitespace after ',' (handled by Black)
+    E231
+
+# Error codes to explicitly select
+select =
+    E,F,W,C90
+
+# Files and directories to exclude
+exclude =
+    .git,
+    .tox,
+    .venv,
+    __pycache__,
+    .pytest_cache,
+    .mypy_cache,
+    build,
+    dist,
+    migrations,
+    *.egg-info,
+    .eggs
+
+# File patterns to exclude
+filename =
+    *.py
+
+# Per-file ignores
+per-file-ignores =
+    # Tests can have longer lines and unused imports
+    tests/*:E501,F401,F403,F405
+    # __init__.py files can have unused imports
+    __init__.py:F401,F403
+    # Settings files can have longer lines
+    *settings*:E501
+    # Migration files are auto-generated
+    migrations/*:E501,F401,F403,F405
+
+# Enable specific checks
+enable-extensions =
+    # McCabe complexity checker
+    C90
+
+# Application import names (for import order checking)
+application-import-names = app
+
+# Import order style
+import-order-style = google
+
+# Hang closing bracket
+hang-closing = true
+
+# Docstring conventions
+docstring-convention = google
+
+# Show source code for each error
+show-source = true
+
+# Count the number of errors and warnings
+count = true
+
+# Display which files were checked
+verbose = 1
+
+# Format for error messages
+format = %(path)s:%(row)d:%(col)d: %(code)s %(text)s
+
+# Exit with non-zero code if there are any errors
+exit-zero = false
+
+# Statistical information
+statistics = true
+
+# Benchmark mode
+benchmark = false
+
+# Jobs for parallel execution
+jobs = auto
