@@ -104,7 +104,7 @@ async def create_chat_completion(
         response = await service.chat_completion(service_request)
 
         logger.info(f"Chat completion created successfully, ID: {response.id}")
-        return ChatCompletionAPIResponse(**response.dict())
+        return ChatCompletionAPIResponse(**response.model_dump())
 
     except HTTPException:
         # 重新抛出已知的 HTTP 异常
