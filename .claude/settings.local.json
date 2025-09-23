@@ -22,7 +22,13 @@
       "Bash(python run_pytest.py coverage)",
       "Bash(python -m pytest tests/test_api_endpoints.py -v --tb=short --disable-warnings)",
       "Bash(python run_pytest.py)",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:pypi.org)",
+      "Bash(pip install:*)",
+      "Bash(python -m pytest tests/test_dashscope_config.py -v)",
+      "Bash(python -m pytest tests/test_dashscope_config.py::TestDashScopeSettingsConfiguration::test_default_settings_without_env -v)",
+      "Bash(python -m pytest tests/test_dashscope_config.py::TestDashScopeSettingsConfiguration::test_api_key_validation_logic -v)",
+      "Bash(python -m pytest tests/test_dashscope.py -v)"
     ],
     "deny": [],
     "ask": []
