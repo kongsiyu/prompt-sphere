@@ -11,14 +11,10 @@ import asyncio
 from contextlib import asynccontextmanager
 
 from database.connection import (
-    engine,
-    check_database_health,
-    get_connection_pool_stats,
-    test_database_connection,
-    init_database,
-    close_database,
-    create_database_tables,
-    drop_database_tables
+    get_engine,
+    check_database_connection,
+    close_database_connections,
+    get_async_session
 )
 from database.session import (
     get_session,
@@ -66,7 +62,8 @@ class DatabaseManager:
             logger.info("Starting database initialization...")
 
             # Test basic connectivity
-            if not await test_database_connection():
+            health_check = await check_database_connection()
+            if health_check["status"] != "connected":
                 raise Exception("Failed to establish database connection")
 
             # Initialize migration manager
@@ -84,8 +81,11 @@ class DatabaseManager:
                 else:
                     logger.info("No pending migrations to run")
 
-            # Ensure all tables exist
-            await init_database()
+            # Create engine and tables if needed
+            engine = get_engine()
+            from database.models import Base
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
 
             # Verify system health
             health_status = await self.get_comprehensive_health()
@@ -110,7 +110,7 @@ class DatabaseManager:
             await session_manager.close_all_sessions()
 
             # Close the main database engine
-            await close_database()
+            await close_database_connections()
 
             self._initialized = False
             logger.info("Database shutdown completed successfully")
@@ -139,13 +139,14 @@ class DatabaseManager:
             # Close all sessions first
             await session_manager.close_all_sessions()
 
-            # Drop all tables
-            await drop_database_tables()
-            logger.info("All tables dropped")
-
-            # Recreate tables
-            await create_database_tables()
-            logger.info("All tables recreated")
+            # Drop and recreate all tables
+            engine = get_engine()
+            from database.models import Base
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.drop_all)
+                logger.info("All tables dropped")
+                await conn.run_sync(Base.metadata.create_all)
+                logger.info("All tables recreated")
 
             # Reinitialize migration tracking if migration manager exists
             if self._migration_manager:
@@ -176,7 +177,7 @@ class DatabaseManager:
 
         try:
             # Check connection health
-            connection_health = await check_database_health()
+            connection_health = await check_database_connection()
             health_report["connection_health"] = connection_health
 
             # Check session management health
@@ -184,7 +185,15 @@ class DatabaseManager:
             health_report["session_health"] = session_health
 
             # Get connection pool statistics
-            pool_stats = await get_connection_pool_stats()
+            engine = get_engine()
+            pool = engine.pool
+            pool_stats = {
+                "pool_size": pool.size(),
+                "checked_in": pool.checkedin(),
+                "checked_out": pool.checkedout(),
+                "overflow": pool.overflow(),
+                "invalidated": pool.invalidated()
+            }
             health_report["pool_stats"] = pool_stats
 
             # Check migration status if manager exists
@@ -196,7 +205,7 @@ class DatabaseManager:
                     health_report["errors"].append(f"Migration status check failed: {e}")
 
             # Determine overall status
-            connection_ok = connection_health.get("status") == "healthy"
+            connection_ok = connection_health.get("status") == "connected"
             session_ok = session_health.get("status") == "healthy"
 
             if connection_ok and session_ok:
@@ -269,17 +278,19 @@ class DatabaseManager:
 
             # Check and log pool statistics
             try:
-                pool_stats = await get_connection_pool_stats()
-                if pool_stats["invalidated_connections"] > 0:
+                engine = get_engine()
+                pool = engine.pool
+                if pool.invalidated() > 0:
                     results["tasks_executed"].append(
-                        f"Found {pool_stats['invalidated_connections']} invalidated connections"
+                        f"Found {pool.invalidated()} invalidated connections"
                     )
             except Exception as e:
                 results["errors"].append(f"Pool stats check failed: {e}")
 
             # Test basic connectivity
             try:
-                if await test_database_connection():
+                conn_check = await check_database_connection()
+                if conn_check["status"] == "connected":
                     results["tasks_executed"].append("Database connectivity verified")
                 else:
                     results["errors"].append("Database connectivity test failed")
@@ -307,20 +318,17 @@ class DatabaseManager:
             # This is a simplified version - in production you'd want more sophisticated backup
             schema_sql = []
 
-            async with get_session() as db:
+            async with get_async_session() as db:
+                from sqlalchemy import text
                 # Get table information
-                tables_result = await db.execute_with_retry(
-                    lambda session: session.execute(
-                        "SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()"
-                    )
+                tables_result = await db.execute(
+                    text("SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()")
                 )
                 tables = [row[0] for row in tables_result.fetchall()]
 
                 for table in tables:
                     # Get CREATE TABLE statement
-                    create_result = await db.execute_with_retry(
-                        lambda session: session.execute(f"SHOW CREATE TABLE {table}")
-                    )
+                    create_result = await db.execute(text(f"SHOW CREATE TABLE {table}"))
                     create_statement = create_result.fetchone()
                     if create_statement:
                         schema_sql.append(create_statement[1])
@@ -412,10 +420,10 @@ async def health_check_endpoint() -> Dict[str, Any]:
         health = await get_database_health()
         return {
             "status": health["overall_status"],
-            "database": health["connection_health"]["status"] == "healthy",
+            "database": health["connection_health"]["status"] == "connected",
             "sessions": health["session_health"]["status"] == "healthy",
             "pool_size": health["pool_stats"]["pool_size"],
-            "active_connections": health["pool_stats"]["checked_out_connections"],
+            "active_connections": health["pool_stats"]["checked_out"],
             "timestamp": health["timestamp"]
         }
     except Exception as e:

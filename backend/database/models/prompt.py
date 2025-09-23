@@ -73,7 +73,7 @@ class Prompt(BaseModel):
     error_message = Column(Text, nullable=True)
 
     # Additional metadata
-    metadata = Column(JSON, nullable=True, default={})
+    custom_metadata = Column(JSON, nullable=True, default={})
 
     # Quality metrics
     user_rating = Column(
@@ -104,8 +104,8 @@ class Prompt(BaseModel):
     def __init__(self, **kwargs):
         """Initialize prompt with default metadata."""
         super().__init__(**kwargs)
-        if self.metadata is None:
-            self.metadata = {}
+        if self.custom_metadata is None:
+            self.custom_metadata = {}
 
         # Auto-calculate total tokens if not provided
         if (self.token_count_total is None and
@@ -193,7 +193,7 @@ class Prompt(BaseModel):
             'system_prompt': kwargs.get('system_prompt', self.system_prompt),
             'sequence_number': kwargs.get('sequence_number', self.sequence_number + 1),
             'version': 1,
-            'metadata': kwargs.get('metadata', {})
+            'custom_metadata': kwargs.get('custom_metadata', {})
         }
 
         # Copy AI model settings if not provided
@@ -231,7 +231,7 @@ class Prompt(BaseModel):
             'model_version': self.model_version,
             'temperature': self.temperature,
             'max_tokens': self.max_tokens,
-            'metadata': self.metadata.copy() if self.metadata else {}
+            'custom_metadata': self.custom_metadata.copy() if self.custom_metadata else {}
         }
 
         variation_data.update(changes)
@@ -239,15 +239,15 @@ class Prompt(BaseModel):
 
     def update_metadata(self, key: str, value: Any) -> None:
         """Update a specific metadata value."""
-        if self.metadata is None:
-            self.metadata = {}
-        self.metadata[key] = value
+        if self.custom_metadata is None:
+            self.custom_metadata = {}
+        self.custom_metadata[key] = value
 
     def get_metadata(self, key: str, default: Any = None) -> Any:
         """Get a specific metadata value."""
-        if self.metadata is None:
+        if self.custom_metadata is None:
             return default
-        return self.metadata.get(key, default)
+        return self.custom_metadata.get(key, default)
 
     def calculate_cost_per_token(self) -> Optional[Decimal]:
         """Calculate cost per token if data is available."""
@@ -299,7 +299,7 @@ class Prompt(BaseModel):
             data.pop('ai_response', None)
 
         if not include_metadata:
-            data.pop('metadata', None)
+            data.pop('custom_metadata', None)
 
         # Convert Decimal to float for JSON serialization
         if 'cost' in data and data['cost'] is not None:

@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError, DisconnectionError, TimeoutError
 from sqlalchemy import text
 
-from .connection import AsyncSessionLocal, engine
+from .connection import get_session_factory, get_engine
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -128,7 +128,8 @@ async def get_session() -> AsyncGenerator[DatabaseSession, None]:
                 lambda session: session.execute(text("SELECT * FROM users"))
             )
     """
-    session = AsyncSessionLocal()
+    session_factory = get_session_factory()
+    session = session_factory()
     db_session = DatabaseSession(session)
 
     try:
@@ -157,7 +158,8 @@ async def get_transaction() -> AsyncGenerator[DatabaseSession, None]:
             await db.session.execute(text("UPDATE profiles ..."))
             # Transaction committed automatically
     """
-    session = AsyncSessionLocal()
+    session_factory = get_session_factory()
+    session = session_factory()
     db_session = DatabaseSession(session)
 
     try:
@@ -242,7 +244,8 @@ class SessionManager:
             logger.warning(f"Session {session_id} already exists, closing old session")
             await self.close_session(session_id)
 
-        session = AsyncSessionLocal()
+        session_factory = get_session_factory()
+        session = session_factory()
         db_session = DatabaseSession(session)
         self._sessions[session_id] = db_session
         logger.info(f"Created session {session_id}")

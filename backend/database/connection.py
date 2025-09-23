@@ -2,9 +2,9 @@
 
 import logging
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine, AsyncEngine
 from sqlalchemy.pool import QueuePool
 from sqlalchemy import text, event
 
@@ -15,226 +15,143 @@ from database.models import Base
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# Create async engine with MySQL optimizations
-engine = create_async_engine(
-    settings.database_url,
-    pool_size=settings.database_pool_size,
-    max_overflow=settings.database_max_overflow,
-    echo=settings.debug,  # Log SQL queries in debug mode
-    pool_pre_ping=True,  # Validate connections before use
-    pool_recycle=3600,  # Recycle connections every hour
-    pool_timeout=30,  # Connection timeout
-    poolclass=QueuePool,  # Use QueuePool for better concurrency
-    connect_args={
-        "charset": "utf8mb4",
-        "autocommit": False,
-        "server_side_cursors": True,
-    },
-)
-
-# Add connection event listeners for monitoring
-@event.listens_for(engine.sync_engine, "connect")
-def receive_connect(dbapi_connection, connection_record):
-    """Handle new database connections."""
-    logger.info(f"New database connection established: {connection_record.info}")
-
-@event.listens_for(engine.sync_engine, "checkout")
-def receive_checkout(dbapi_connection, connection_record, connection_proxy):
-    """Handle connection checkout from pool."""
-    logger.debug("Connection checked out from pool")
-
-@event.listens_for(engine.sync_engine, "checkin")
-def receive_checkin(dbapi_connection, connection_record):
-    """Handle connection checkin to pool."""
-    logger.debug("Connection checked in to pool")
-
-# Create session factory
-AsyncSessionLocal = async_sessionmaker(
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autoflush=True,
-    autocommit=False,
-)
+# Global engine instance
+_engine: Optional[AsyncEngine] = None
+_session_factory: Optional[async_sessionmaker] = None
 
 
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """
-    Get database session with proper error handling and logging.
+def get_engine() -> AsyncEngine:
+    """Get or create the database engine lazily."""
+    global _engine
+    if _engine is None:
+        logger.info(f"Creating database engine with URL: {settings.database_url}")
 
-    Yields:
-        AsyncSession: Database session
-    """
-    session = AsyncSessionLocal()
-    try:
-        logger.debug("Creating new database session")
-        yield session
-        await session.commit()
-        logger.debug("Database session committed successfully")
-    except Exception as e:
-        logger.error(f"Database session error: {e}")
-        await session.rollback()
-        logger.debug("Database session rolled back")
-        raise
-    finally:
-        await session.close()
-        logger.debug("Database session closed")
+        # Create async engine with MySQL optimizations
+        _engine = create_async_engine(
+            settings.database_url,
+            pool_size=settings.database_pool_size,
+            max_overflow=settings.database_max_overflow,
+            echo=settings.debug,  # Log SQL queries in debug mode
+            pool_pre_ping=True,  # Validate connections before use
+            pool_recycle=3600,  # Recycle connections every hour
+            pool_timeout=30,  # Connection timeout
+            poolclass=QueuePool,  # Use QueuePool for better concurrency
+            connect_args={
+                "charset": "utf8mb4",
+                "autocommit": False,
+                "server_side_cursors": True,
+            } if settings.database_url.startswith('mysql') else {}
+        )
+
+        # Add connection event listeners for monitoring
+        @event.listens_for(_engine.sync_engine, "connect")
+        def receive_connect(dbapi_connection, connection_record):
+            """Handle new database connections."""
+            logger.info(f"New database connection established: {connection_record.info}")
+
+        @event.listens_for(_engine.sync_engine, "checkout")
+        def receive_checkout(dbapi_connection, connection_record, connection_proxy):
+            """Handle connection checkout from pool."""
+            logger.debug("Connection checked out from pool")
+
+        @event.listens_for(_engine.sync_engine, "checkin")
+        def receive_checkin(dbapi_connection, connection_record):
+            """Handle connection checkin to pool."""
+            logger.debug("Connection checked in to pool")
+
+    return _engine
+
+
+def get_session_factory() -> async_sessionmaker:
+    """Get or create the session factory."""
+    global _session_factory
+    if _session_factory is None:
+        engine = get_engine()
+        _session_factory = async_sessionmaker(
+            bind=engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+            autoflush=True,
+            autocommit=False,
+        )
+    return _session_factory
+
+
+# Backward compatibility
+def get_async_session_local() -> async_sessionmaker:
+    """Get the async session factory (backward compatibility)."""
+    return get_session_factory()
+
 
 @asynccontextmanager
-async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
+async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     """
-    Alternative context manager for database sessions.
+    Get an async database session.
+
+    This context manager ensures proper session lifecycle management.
 
     Usage:
-        async with get_db_session() as session:
+        async with get_async_session() as session:
             # Use session here
+            result = await session.execute(select(User))
     """
-    session = AsyncSessionLocal()
-    try:
-        logger.debug("Creating database session context")
-        yield session
-        await session.commit()
-    except Exception as e:
-        logger.error(f"Database session context error: {e}")
-        await session.rollback()
-        raise
-    finally:
-        await session.close()
-        logger.debug("Database session context closed")
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
 
 
-async def create_database_tables() -> None:
-    """Create all database tables."""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-
-async def drop_database_tables() -> None:
-    """Drop all database tables."""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-
-
-async def close_database() -> None:
-    """Close database engine."""
-    logger.info("Closing database engine")
-    await engine.dispose()
-    logger.info("Database engine closed")
-
-
-async def check_database_health() -> dict:
+async def check_database_connection() -> dict:
     """
-    Check database connection health.
+    Check database connection and return status information.
 
     Returns:
-        Dict with health status information
-    """
-    health_status = {
-        "status": "unknown",
-        "connection_pool": {},
-        "database_info": {},
-        "error": None
-    }
-
-    try:
-        async with engine.begin() as conn:
-            # Test basic connectivity
-            result = await conn.execute(text("SELECT 1 as health_check"))
-            health_check = result.scalar()
-
-            if health_check == 1:
-                health_status["status"] = "healthy"
-
-                # Get database version and info
-                db_version = await conn.execute(text("SELECT VERSION() as version"))
-                version_info = db_version.scalar()
-                health_status["database_info"]["version"] = version_info
-
-                # Get current timestamp
-                timestamp_result = await conn.execute(text("SELECT NOW() as current_time"))
-                current_time = timestamp_result.scalar()
-                health_status["database_info"]["current_time"] = str(current_time)
-
-                # Connection pool information
-                pool = engine.pool
-                health_status["connection_pool"] = {
-                    "size": pool.size(),
-                    "checked_in": pool.checkedin(),
-                    "checked_out": pool.checkedout(),
-                    "overflow": pool.overflow(),
-                    "invalidated": pool.invalidated()
-                }
-
-                logger.info("Database health check passed")
-            else:
-                health_status["status"] = "unhealthy"
-                health_status["error"] = "Health check query failed"
-
-    except Exception as e:
-        health_status["status"] = "unhealthy"
-        health_status["error"] = str(e)
-        logger.error(f"Database health check failed: {e}")
-
-    return health_status
-
-
-async def get_connection_pool_stats() -> dict:
-    """
-    Get detailed connection pool statistics.
-
-    Returns:
-        Dict with connection pool statistics
-    """
-    pool = engine.pool
-    return {
-        "pool_size": pool.size(),
-        "checked_in_connections": pool.checkedin(),
-        "checked_out_connections": pool.checkedout(),
-        "overflow_connections": pool.overflow(),
-        "invalidated_connections": pool.invalidated(),
-        "total_connections": pool.size() + pool.overflow(),
-        "available_connections": pool.checkedin(),
-    }
-
-
-async def test_database_connection() -> bool:
-    """
-    Test database connection without creating a session.
-
-    Returns:
-        True if connection is successful, False otherwise
+        dict: Connection status and database information
     """
     try:
-        async with engine.begin() as conn:
-            await conn.execute(text("SELECT 1"))
-            logger.info("Database connection test successful")
-            return True
+        async with get_async_session() as session:
+            # Execute a simple query to test connection
+            result = await session.execute(text("SELECT 1 as test"))
+            test_value = result.scalar()
+
+            # Get database version if possible
+            try:
+                version_result = await session.execute(text("SELECT VERSION()"))
+                db_version = version_result.scalar()
+            except:
+                db_version = "Unknown"
+
+            return {
+                "status": "connected",
+                "test_query": test_value == 1,
+                "database_version": db_version,
+                "pool_size": settings.database_pool_size,
+                "max_overflow": settings.database_max_overflow
+            }
     except Exception as e:
-        logger.error(f"Database connection test failed: {e}")
-        return False
+        logger.error(f"Database connection check failed: {e}")
+        return {
+            "status": "disconnected",
+            "error": str(e),
+            "test_query": False
+        }
 
 
-async def init_database() -> None:
-    """
-    Initialize database with all required tables and configurations.
-    """
-    try:
-        logger.info("Initializing database...")
+async def close_database_connections():
+    """Close all database connections."""
+    global _engine
+    if _engine:
+        await _engine.dispose()
+        _engine = None
+        logger.info("Database connections closed")
 
-        # Test connection first
-        if not await test_database_connection():
-            raise Exception("Cannot establish database connection")
 
-        # Create all tables
-        await create_database_tables()
-
-        # Verify initialization
-        health = await check_database_health()
-        if health["status"] != "healthy":
-            raise Exception(f"Database initialization failed: {health.get('error', 'Unknown error')}")
-
-        logger.info("Database initialization completed successfully")
-
-    except Exception as e:
-        logger.error(f"Database initialization failed: {e}")
-        raise
+# Backward compatibility aliases
+engine = property(get_engine)
+AsyncSessionLocal = get_session_factory

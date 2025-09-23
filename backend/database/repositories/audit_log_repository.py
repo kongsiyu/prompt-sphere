@@ -80,7 +80,7 @@ class AuditLogRepository(BaseRepository[AuditLog]):
                 method=method,
                 session_id=session_id,
                 category='user_action',
-                metadata=metadata
+                custom_metadata=metadata
             )
 
             self.session.add(audit_log)
@@ -126,7 +126,7 @@ class AuditLogRepository(BaseRepository[AuditLog]):
                 entity_id=entity_id,
                 severity=severity,
                 category='system_action',
-                metadata=details or {}
+                custom_metadata=details or {}
             )
 
             self.session.add(audit_log)
@@ -179,7 +179,7 @@ class AuditLogRepository(BaseRepository[AuditLog]):
                 user_agent=user_agent,
                 severity=severity,
                 category='security',
-                metadata=details or {}
+                custom_metadata=details or {}
             )
 
             self.session.add(audit_log)
@@ -235,7 +235,7 @@ class AuditLogRepository(BaseRepository[AuditLog]):
                 user_agent=user_agent,
                 severity=severity,
                 category='authentication',
-                metadata=metadata
+                custom_metadata=metadata
             )
 
             self.session.add(audit_log)

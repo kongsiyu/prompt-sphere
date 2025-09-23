@@ -38,7 +38,7 @@ class PromptFactory(factory.Factory):
     max_tokens = fuzzy.FuzzyInteger(1000, 4000)
     status = 'completed'
     error_message = None
-    metadata = factory.LazyFunction(lambda: {
+    custom_metadata = factory.LazyFunction(lambda: {
         'source': 'test',
         'environment': 'testing'
     })

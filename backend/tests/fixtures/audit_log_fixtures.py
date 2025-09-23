@@ -30,7 +30,7 @@ class AuditLogFactory(factory.Factory):
     request_id = factory.LazyFunction(lambda: f"req_{uuid.uuid4().hex[:8]}")
     endpoint = factory.Faker('uri_path')
     method = fuzzy.FuzzyChoice(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
-    metadata = factory.LazyFunction(lambda: {'source': 'test', 'additional_info': 'test_data'})
+    custom_metadata = factory.LazyFunction(lambda: {'source': 'test', 'additional_info': 'test_data'})
     severity = fuzzy.FuzzyChoice(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'])
     category = fuzzy.FuzzyChoice(['user_action', 'system_action', 'security', 'authentication'])
     created_at = factory.LazyFunction(datetime.utcnow)
@@ -334,7 +334,7 @@ async def create_audit_logs_by_severity(session, user_id):
     for severity, log_data in severities.items():
         log_data['user_id'] = user_id
         log_data['severity'] = severity
-        log_data['metadata'] = {'severity_test': True, 'level': severity}
+        log_data['custom_metadata'] = {'severity_test': True, 'level': severity}
 
         log = await create_test_audit_log(session, **log_data)
         logs[severity.lower()] = log

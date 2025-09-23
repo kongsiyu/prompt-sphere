@@ -8,7 +8,7 @@ from typing import List, Optional, Type
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .connection import get_db
+from .connection import get_async_session
 from .migration_base import Migration, MigrationError, MigrationExecutionError, MigrationValidationError
 from .migration_tracker import MigrationTracker
 
@@ -159,7 +159,7 @@ class MigrationManager:
         Returns:
             List of pending migration classes
         """
-        async with get_db() as session:
+        async with get_async_session() as session:
             tracker = MigrationTracker(session)
             await tracker.ensure_migration_table_exists()
 
@@ -199,7 +199,7 @@ class MigrationManager:
 
         applied_versions = []
 
-        async with get_db() as session:
+        async with get_async_session() as session:
             tracker = MigrationTracker(session)
 
             for migration_class in pending_migrations:
@@ -243,7 +243,7 @@ class MigrationManager:
         Raises:
             MigrationExecutionError: If rollback fails
         """
-        async with get_db() as session:
+        async with get_async_session() as session:
             tracker = MigrationTracker(session)
             applied_versions = await tracker.get_applied_migrations()
 
@@ -293,7 +293,7 @@ class MigrationManager:
         Returns:
             Dictionary with migration status information
         """
-        async with get_db() as session:
+        async with get_async_session() as session:
             tracker = MigrationTracker(session)
             await tracker.ensure_migration_table_exists()
 

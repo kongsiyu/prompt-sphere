@@ -110,6 +110,13 @@ disallow_untyped_defs = false
 [tool.pytest.ini_options]
 minversion = "7.0"
 addopts = "-ra -q --strict-markers --strict-config"
+markers = [
+    "unit: Unit tests (no external dependencies)",
+    "api: API-related tests",
+    "database: Database integration tests",
+    "slow: Slow-running tests",
+    "integration: Integration tests"
+]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 python_files = ["test_*.py", "*_test.py"]

@@ -74,7 +74,7 @@ class PromptRepository(BaseRepository[Prompt]):
                 sequence_number=sequence_number,
                 template_id=template_id,
                 system_prompt=system_prompt.strip() if system_prompt else None,
-                metadata=metadata or {}
+                custom_metadata=metadata or {}
             )
 
             # Apply model settings if provided

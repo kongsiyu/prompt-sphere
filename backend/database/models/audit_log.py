@@ -63,7 +63,7 @@ class AuditLog(AuditMixin, Base):
     )
 
     # Additional metadata
-    metadata = Column(JSON, nullable=True, default={})
+    custom_metadata = Column(JSON, nullable=True, default={})
     severity = Column(
         Enum('LOW', 'MEDIUM', 'HIGH', 'CRITICAL', name='audit_severity'),
         nullable=False,
@@ -85,8 +85,8 @@ class AuditLog(AuditMixin, Base):
     def __init__(self, **kwargs):
         """Initialize audit log with default metadata."""
         super().__init__(**kwargs)
-        if self.metadata is None:
-            self.metadata = {}
+        if self.custom_metadata is None:
+            self.custom_metadata = {}
 
     @classmethod
     def create_log(cls,
@@ -104,7 +104,7 @@ class AuditLog(AuditMixin, Base):
                    session_id: Optional[str] = None,
                    severity: str = 'LOW',
                    category: Optional[str] = None,
-                   metadata: Optional[Dict[str, Any]] = None) -> 'AuditLog':
+                   custom_metadata: Optional[Dict[str, Any]] = None) -> 'AuditLog':
         """
         Create an audit log entry with computed changes.
 
@@ -148,7 +148,7 @@ class AuditLog(AuditMixin, Base):
             session_id=session_id,
             severity=severity,
             category=category,
-            metadata=metadata or {}
+            custom_metadata=custom_metadata or {}
         )
 
     @staticmethod
@@ -182,15 +182,15 @@ class AuditLog(AuditMixin, Base):
 
     def add_metadata(self, key: str, value: Any) -> None:
         """Add a metadata entry."""
-        if self.metadata is None:
-            self.metadata = {}
-        self.metadata[key] = value
+        if self.custom_metadata is None:
+            self.custom_metadata = {}
+        self.custom_metadata[key] = value
 
     def get_metadata(self, key: str, default: Any = None) -> Any:
         """Get a metadata value."""
-        if self.metadata is None:
+        if self.custom_metadata is None:
             return default
-        return self.metadata.get(key, default)
+        return self.custom_metadata.get(key, default)
 
     def get_change_summary(self) -> str:
         """Get a human-readable summary of changes."""
@@ -277,7 +277,7 @@ class AuditLog(AuditMixin, Base):
                 'new_values': self.new_values,
                 'changes': self.changes,
                 'user_agent': self.user_agent,
-                'metadata': self.metadata
+                'metadata': self.custom_metadata
             })
 
         return data
@@ -343,6 +343,6 @@ def log_authentication(user_id: str, action: str, ip_address: str, user_agent: s
         user_agent=user_agent,
         severity=severity,
         category='authentication',
-        metadata=metadata,
+        custom_metadata=metadata,
         **{k: v for k, v in kwargs.items() if k != 'metadata'}
     )

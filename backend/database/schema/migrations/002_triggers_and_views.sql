@@ -218,7 +218,7 @@ SELECT
     al.ip_address,
     al.user_agent,
     al.created_at,
-    al.metadata
+    al.custom_metadata
 FROM audit_logs al
 LEFT JOIN users u ON al.user_id = u.id
 WHERE al.severity IN ('HIGH', 'CRITICAL')

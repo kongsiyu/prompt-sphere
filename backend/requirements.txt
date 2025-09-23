@@ -6,6 +6,11 @@ uvicorn[standard]>=0.24.0,<1.0.0
 pydantic>=2.5.0,<3.0.0
 pydantic-settings>=2.1.0,<3.0.0
 
+# Database dependencies
+sqlalchemy>=2.0.23,<3.0.0
+aiomysql>=0.2.0,<1.0.0
+alembic>=1.13.0,<2.0.0
+
 # HTTP client for external API calls
 httpx>=0.25.2,<1.0.0
 
@@ -16,10 +21,14 @@ python-multipart>=0.0.6,<1.0.0
 python-jose[cryptography]>=3.3.0,<4.0.0
 python-dotenv>=1.0.0,<2.0.0
 
+# CLI tools
+click>=8.1.7,<9.0.0
+
 # Development and testing dependencies
 pytest>=7.4.3,<8.0.0
 pytest-asyncio>=0.21.1,<1.0.0
 pytest-httpx>=0.26.0,<1.0.0
+factory-boy>=3.3.0,<4.0.0
 
 # Code quality tools
 black>=23.11.0,<24.0.0
