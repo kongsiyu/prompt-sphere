@@ -4,7 +4,10 @@
 
 ## Project-Specific Instructions
 
-Add your project-specific instructions here.
+### Language Preference
+- **默认输出语言**: 中文 (Chinese)
+- 除非用户明确要求使用英文，否则所有回复都应使用中文
+- 代码注释和文档也优先使用中文
 
 ## Testing
 
