@@ -1,5 +1,6 @@
 """DashScope API integration package."""
 
+from .client import DashScopeClient
 from .config import DashScopeSettings
 from .models import (
     ChatCompletionRequest,
@@ -21,6 +22,8 @@ from .models import (
 )
 
 __all__ = [
+    # Client
+    "DashScopeClient",
     # Configuration
     "DashScopeSettings",
     # Models and Enums
