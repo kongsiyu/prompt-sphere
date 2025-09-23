@@ -28,7 +28,12 @@
       "Bash(python -m pytest tests/test_dashscope_config.py -v)",
       "Bash(python -m pytest tests/test_dashscope_config.py::TestDashScopeSettingsConfiguration::test_default_settings_without_env -v)",
       "Bash(python -m pytest tests/test_dashscope_config.py::TestDashScopeSettingsConfiguration::test_api_key_validation_logic -v)",
-      "Bash(python -m pytest tests/test_dashscope.py -v)"
+      "Bash(python -m pytest tests/test_dashscope.py -v)",
+      "Read(//d/ProgramData/git/repository/github/kongsiyu/epic-ai-system-prompt-generator/backend/app/api/v1/**)",
+      "Read(//d/ProgramData/git/repository/github/kongsiyu/epic-ai-system-prompt-generator/backend/tests/**)",
+      "Read(//d/ProgramData/git/repository/github/kongsiyu/epic-ai-system-prompt-generator/backend/app/services/**)",
+      "Read(//d/ProgramData/git/repository/github/kongsiyu/epic-ai-system-prompt-generator/backend/**)",
+      "Bash(python -m pytest tests/test_dashscope_api.py -v)"
     ],
     "deny": [],
     "ask": []
