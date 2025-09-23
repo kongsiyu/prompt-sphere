@@ -15,7 +15,7 @@ from .retry import with_retry, RetryConfig
 from .models import (
     ChatCompletionRequest,
     ChatCompletionResponse,
-    ChatMessage,
+    Message,
     Choice,
     QwenModel,
     StreamChoice,
@@ -122,7 +122,7 @@ class DashScopeClient:
             choices = []
             if hasattr(output, 'choices') and output.choices:
                 for idx, choice_data in enumerate(output.choices):
-                    message = ChatMessage(
+                    message = Message(
                         role="assistant",
                         content=choice_data.message.content
                     )
@@ -134,7 +134,7 @@ class DashScopeClient:
                     choices.append(choice)
             else:
                 # Single response format
-                message = ChatMessage(
+                message = Message(
                     role="assistant",
                     content=output.text
                 )
@@ -248,7 +248,7 @@ class DashScopeClient:
             # Simple test request to verify connectivity
             test_request = ChatCompletionRequest(
                 model=QwenModel.QWEN_TURBO,
-                messages=[ChatMessage(role="user", content="Hello")]
+                messages=[Message(role="user", content="Hello")]
             )
 
             response = await self.chat_completion(test_request)
