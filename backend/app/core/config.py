@@ -91,6 +91,43 @@ class Settings(BaseSettings):
         alias="DASHSCOPE_ENABLE_STREAMING"
     )
 
+    # Redis Configuration
+    redis_url: Optional[str] = Field(
+        default=None,
+        description="Redis connection URL (redis://localhost:6379/0)",
+        alias="REDIS_URL"
+    )
+    redis_host: str = Field(
+        default="localhost",
+        description="Redis host",
+        alias="REDIS_HOST"
+    )
+    redis_port: int = Field(
+        default=6379,
+        description="Redis port",
+        alias="REDIS_PORT"
+    )
+    redis_password: Optional[str] = Field(
+        default=None,
+        description="Redis password",
+        alias="REDIS_PASSWORD"
+    )
+    redis_db: int = Field(
+        default=0,
+        description="Redis database number",
+        alias="REDIS_DB"
+    )
+    redis_pool_size: int = Field(
+        default=10,
+        description="Redis connection pool size",
+        alias="REDIS_POOL_SIZE"
+    )
+    redis_timeout: int = Field(
+        default=30,
+        description="Redis connection timeout in seconds",
+        alias="REDIS_TIMEOUT"
+    )
+
     @property
     def cors_origins(self) -> list[str]:
         """Parse CORS origins from string."""

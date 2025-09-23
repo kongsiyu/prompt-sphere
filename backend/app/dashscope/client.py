@@ -9,6 +9,9 @@ from dashscope import Generation
 
 from .auth import DashScopeAuth
 from .config import DashScopeSettings
+from .exceptions import map_dashscope_error
+from .rate_limiter import get_rate_limiter, get_request_queue
+from .retry import with_retry, RetryConfig
 from .models import (
     ChatCompletionRequest,
     ChatCompletionResponse,
@@ -34,45 +37,36 @@ class DashScopeClient:
         # Set global API key for dashscope SDK
         dashscope.api_key = self.auth.api_key
 
+        # Initialize rate limiter and request queue
+        self.rate_limiter = get_rate_limiter(self.settings)
+        self.request_queue = get_request_queue(max_concurrent=5)
+
+        # Initialize retry configuration
+        self.retry_config = RetryConfig(
+            max_retries=self.settings.max_retries,
+            base_delay=self.settings.retry_delay,
+            max_delay=60.0
+        )
+
         logger.info("DashScope client initialized successfully")
 
     async def chat_completion(
         self, request: ChatCompletionRequest
     ) -> ChatCompletionResponse:
         """Create a chat completion using DashScope API."""
-        try:
-            logger.debug(f"Creating chat completion with model: {request.model.value}")
+        logger.debug(f"Creating chat completion with model: {request.model.value}")
 
-            # Convert our request format to DashScope format
-            messages = [
-                {"role": msg.role.value, "content": msg.content}
-                for msg in request.messages
-            ]
+        # Use request queue to limit concurrent requests
+        async with self.request_queue:
+            # Apply rate limiting
+            await self.rate_limiter.wait_if_needed()
 
-            # Prepare parameters
-            params = {}
-            if request.parameters:
-                params.update({
-                    "temperature": request.parameters.temperature,
-                    "top_p": request.parameters.top_p,
-                    "max_tokens": request.parameters.max_tokens,
-                    "stop": request.parameters.stop,
-                })
-
-            # Make API call in thread pool to avoid blocking
-            response = await asyncio.to_thread(
-                Generation.call,
-                model=request.model.value,
-                messages=messages,
-                **params
+            # Execute with retry logic
+            return await with_retry(
+                self._execute_chat_completion,
+                request,
+                retry_config=self.retry_config
             )
-
-            # Convert response to our format
-            return self._convert_response(response, request.model)
-
-        except Exception as e:
-            logger.error(f"Chat completion failed: {str(e)}")
-            raise self._convert_exception(e)
 
     async def stream_chat_completion(
         self, request: ChatCompletionRequest
@@ -207,11 +201,46 @@ class DashScopeClient:
             logger.error(f"Failed to convert stream response: {str(e)}")
             raise ValueError(f"Invalid stream response format from DashScope: {str(e)}")
 
+    async def _execute_chat_completion(
+        self, request: ChatCompletionRequest
+    ) -> ChatCompletionResponse:
+        """Execute the actual chat completion API call."""
+        try:
+            # Convert our request format to DashScope format
+            messages = [
+                {"role": msg.role.value, "content": msg.content}
+                for msg in request.messages
+            ]
+
+            # Prepare parameters
+            params = {}
+            if request.parameters:
+                params.update({
+                    "temperature": request.parameters.temperature,
+                    "top_p": request.parameters.top_p,
+                    "max_tokens": request.parameters.max_tokens,
+                    "stop": request.parameters.stop,
+                })
+
+            # Make API call in thread pool to avoid blocking
+            response = await asyncio.to_thread(
+                Generation.call,
+                model=request.model.value,
+                messages=messages,
+                **params
+            )
+
+            # Convert response to our format
+            return self._convert_response(response, request.model)
+
+        except Exception as e:
+            logger.error(f"DashScope API call failed: {str(e)}")
+            # Map to our custom exceptions
+            raise map_dashscope_error(e)
+
     def _convert_exception(self, e: Exception) -> Exception:
         """Convert DashScope exceptions to our format."""
-        # TODO: Implement proper exception mapping in Stream C
-        # For now, re-raise the original exception
-        return e
+        return map_dashscope_error(e)
 
     async def health_check(self) -> bool:
         """Check if the DashScope API is accessible."""
