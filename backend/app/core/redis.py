@@ -2,15 +2,49 @@
 
 import asyncio
 import logging
-from typing import Optional, Any, Dict, Union
+import time
+from typing import Optional, Any, Dict, Union, Callable, Awaitable
 from urllib.parse import urlparse
 
 import aioredis
-from aioredis import Redis
+from aioredis import Redis, ConnectionError, TimeoutError
 
 from .config import get_settings
 
 logger = logging.getLogger(__name__)
+
+
+def retry_on_connection_error(max_retries: Optional[int] = None, backoff_factor: Optional[float] = None):
+    """装饰器：在连接错误时重试Redis操作"""
+    def decorator(func: Callable[..., Awaitable[Any]]) -> Callable[..., Awaitable[Any]]:
+        async def wrapper(self, *args, **kwargs):
+            # 使用实例的配置或默认值
+            _max_retries = max_retries or getattr(self, 'settings', get_settings()).redis_max_retries
+            _backoff_factor = backoff_factor or getattr(self, 'settings', get_settings()).redis_retry_backoff
+
+            last_exception = None
+            for attempt in range(_max_retries + 1):
+                try:
+                    return await func(self, *args, **kwargs)
+                except (ConnectionError, TimeoutError, OSError) as e:
+                    last_exception = e
+                    if attempt == _max_retries:
+                        logger.error(f"Redis操作失败，已重试{_max_retries}次: {e}")
+                        break
+
+                    wait_time = _backoff_factor * (2 ** attempt)
+                    logger.warning(f"Redis连接错误，{wait_time:.1f}秒后重试（第{attempt + 1}次）: {e}")
+                    await asyncio.sleep(wait_time)
+
+                    # 尝试重新连接
+                    try:
+                        await self._reconnect()
+                    except Exception as reconnect_error:
+                        logger.warning(f"重连尝试失败: {reconnect_error}")
+
+            raise last_exception
+        return wrapper
+    return decorator
 
 
 class RedisClient:
@@ -43,7 +77,7 @@ class RedisClient:
                 max_connections=self.settings.redis_pool_size,
                 socket_timeout=self.settings.redis_timeout,
                 socket_connect_timeout=self.settings.redis_timeout,
-                health_check_interval=30
+                health_check_interval=self.settings.redis_health_check_interval
             )
 
             # Create Redis client
@@ -57,6 +91,12 @@ class RedisClient:
             logger.error(f"Failed to connect to Redis: {e}")
             await self.disconnect()
             raise
+
+    async def _reconnect(self) -> None:
+        """Reconnect to Redis server."""
+        logger.info("尝试重新连接到 Redis...")
+        await self.disconnect()
+        await self.connect()
 
     async def disconnect(self) -> None:
         """Disconnect from Redis server."""
@@ -88,6 +128,7 @@ class RedisClient:
             logger.warning(f"Redis health check failed: {e}")
             return False
 
+    @retry_on_connection_error()
     async def get(self, key: str) -> Optional[bytes]:
         """Get value from Redis."""
         try:
@@ -96,6 +137,7 @@ class RedisClient:
             logger.error(f"Failed to get key {key} from Redis: {e}")
             return None
 
+    @retry_on_connection_error()
     async def set(
         self,
         key: str,
@@ -113,6 +155,7 @@ class RedisClient:
             logger.error(f"Failed to set key {key} in Redis: {e}")
             return False
 
+    @retry_on_connection_error()
     async def delete(self, *keys: str) -> int:
         """Delete keys from Redis."""
         try:
@@ -121,6 +164,7 @@ class RedisClient:
             logger.error(f"Failed to delete keys {keys} from Redis: {e}")
             return 0
 
+    @retry_on_connection_error()
     async def exists(self, *keys: str) -> int:
         """Check if keys exist in Redis."""
         try:
@@ -153,6 +197,7 @@ class RedisClient:
             logger.error(f"Failed to increment key {key} in Redis: {e}")
             return 0
 
+    @retry_on_connection_error()
     async def hget(self, name: str, key: str) -> Optional[bytes]:
         """Get field from Redis hash."""
         try:

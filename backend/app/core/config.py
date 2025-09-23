@@ -127,6 +127,21 @@ class Settings(BaseSettings):
         description="Redis connection timeout in seconds",
         alias="REDIS_TIMEOUT"
     )
+    redis_health_check_interval: int = Field(
+        default=30,
+        description="Redis health check interval in seconds",
+        alias="REDIS_HEALTH_CHECK_INTERVAL"
+    )
+    redis_max_retries: int = Field(
+        default=3,
+        description="Maximum retries for Redis operations",
+        alias="REDIS_MAX_RETRIES"
+    )
+    redis_retry_backoff: float = Field(
+        default=0.5,
+        description="Backoff factor for Redis retries",
+        alias="REDIS_RETRY_BACKOFF"
+    )
 
     @property
     def cors_origins(self) -> list[str]:
