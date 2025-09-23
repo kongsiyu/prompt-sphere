@@ -115,14 +115,13 @@ class TestDashScopeAPIEndpoints:
             detail="认证失败"
         )
 
-        with patch('app.dependencies.dashscope.get_dashscope_service', return_value=mock_service):
-            response = client.post(
-                "/dashscope/chat/completions",
-                json={
-                    "messages": ["Hello"],
-                    "model": "qwen-turbo"
-                }
-            )
+        response = client.post(
+            "/dashscope/chat/completions",
+            json={
+                "messages": ["Hello"],
+                "model": "qwen-turbo"
+            }
+        )
 
         assert response.status_code == 401
         assert "认证失败" in response.json()["detail"]
@@ -153,15 +152,14 @@ class TestDashScopeAPIEndpoints:
 
         mock_service.stream_chat_completion.return_value = mock_stream()
 
-        with patch('app.dependencies.dashscope.get_dashscope_service', return_value=mock_service):
-            response = client.post(
-                "/dashscope/chat/completions/stream",
-                json={
-                    "messages": ["Hello"],
-                    "model": "qwen-turbo",
-                    "stream": True
-                }
-            )
+        response = client.post(
+            "/dashscope/chat/completions/stream",
+            json={
+                "messages": ["Hello"],
+                "model": "qwen-turbo",
+                "stream": True
+            }
+        )
 
         assert response.status_code == 200
         assert response.headers["content-type"] == "text/plain; charset=utf-8"
@@ -194,8 +192,7 @@ class TestDashScopeAPIEndpoints:
 
         mock_service.get_supported_models.return_value = mock_models
 
-        with patch('app.dependencies.dashscope.get_dashscope_service', return_value=mock_service):
-            response = client.get("/dashscope/models")
+        response = client.get("/dashscope/models")
 
         assert response.status_code == 200
         data = response.json()
@@ -217,8 +214,7 @@ class TestDashScopeAPIEndpoints:
 
         mock_service.health_check.return_value = mock_health
 
-        with patch('app.dependencies.dashscope.get_dashscope_service', return_value=mock_service):
-            response = client.get("/dashscope/health")
+        response = client.get("/dashscope/health")
 
         assert response.status_code == 200
         data = response.json()
@@ -236,10 +232,9 @@ class TestDashScopeAPIEndpoints:
 
         mock_service.health_check.return_value = mock_health
 
-        with patch('app.dependencies.dashscope.get_dashscope_service', return_value=mock_service):
-            # health_check 方法直接返回不健康状态而不抛出异常
-            # 需要在路由层面处理状态检查
-            response = client.get("/dashscope/health")
+        # health_check 方法直接返回不健康状态而不抛出异常
+        # 需要在路由层面处理状态检查
+        response = client.get("/dashscope/health")
 
         # 根据实际实现，不健康状态可能返回 503
         assert response.status_code in [200, 503]
@@ -248,9 +243,7 @@ class TestDashScopeAPIEndpoints:
         """测试连接测试端点成功."""
         mock_service.chat_completion.return_value = mock_response
 
-        # 模拟健康的服务依赖
-        with patch('app.dependencies.dashscope.get_dashscope_service', return_value=mock_service):
-            response = client.get("/dashscope/test")
+        response = client.get("/dashscope/test")
 
         assert response.status_code == 200
         data = response.json()
@@ -258,9 +251,10 @@ class TestDashScopeAPIEndpoints:
         assert "test_response_id" in data
         assert data["model"] == "qwen-turbo"
 
-    def test_test_connection_service_unavailable(self, client):
+    def test_test_connection_service_unavailable(self, app):
         """测试连接测试端点 - 服务不可用."""
         from fastapi import HTTPException
+        from app.dependencies.dashscope import get_dashscope_service
 
         def mock_unhealthy_service():
             raise HTTPException(
@@ -268,10 +262,15 @@ class TestDashScopeAPIEndpoints:
                 detail="DashScope 服务不可用"
             )
 
-        with patch('app.dependencies.dashscope.get_dashscope_service', side_effect=mock_unhealthy_service):
+        app.dependency_overrides[get_dashscope_service] = mock_unhealthy_service
+
+        with TestClient(app) as client:
             response = client.get("/dashscope/test")
 
         assert response.status_code == 503
+
+        # 清理
+        app.dependency_overrides.clear()
 
     @pytest.mark.parametrize("invalid_request", [
         {"messages": [""], "model": "qwen-turbo"},  # 空消息
@@ -279,12 +278,14 @@ class TestDashScopeAPIEndpoints:
         {"messages": ["Hello"], "model": "qwen-turbo", "temperature": -1},  # 无效温度
         {"messages": ["Hello"], "model": "qwen-turbo", "max_tokens": -1},  # 无效令牌数
     ])
-    def test_chat_completion_validation_errors(self, client, invalid_request):
+    def test_chat_completion_validation_errors(self, app, invalid_request):
         """测试各种验证错误场景."""
-        response = client.post(
-            "/dashscope/chat/completions",
-            json=invalid_request
-        )
+        # 使用没有依赖覆盖的客户端来测试FastAPI的验证
+        with TestClient(app) as client:
+            response = client.post(
+                "/dashscope/chat/completions",
+                json=invalid_request
+            )
 
         assert response.status_code == 422
 
@@ -292,14 +293,13 @@ class TestDashScopeAPIEndpoints:
         """测试默认参数。"""
         mock_service.chat_completion.return_value = mock_response
 
-        with patch('app.dependencies.dashscope.get_dashscope_service', return_value=mock_service):
-            response = client.post(
-                "/dashscope/chat/completions",
-                json={
-                    "messages": ["Hello"]
-                    # 只提供必需参数，其他使用默认值
-                }
-            )
+        response = client.post(
+            "/dashscope/chat/completions",
+            json={
+                "messages": ["Hello"]
+                # 只提供必需参数，其他使用默认值
+            }
+        )
 
         assert response.status_code == 200
 
@@ -322,14 +322,13 @@ class TestDashScopeAPIEndpoints:
 
         mock_service.stream_chat_completion.return_value = mock_stream()
 
-        with patch('app.dependencies.dashscope.get_dashscope_service', return_value=mock_service):
-            response = client.post(
-                "/dashscope/chat/completions/stream",
-                json={
-                    "messages": ["Hello"],
-                    "stream": False  # 即使设置为 False，端点也会强制启用流式
-                }
-            )
+        response = client.post(
+            "/dashscope/chat/completions/stream",
+            json={
+                "messages": ["Hello"],
+                "stream": False  # 即使设置为 False，端点也会强制启用流式
+            }
+        )
 
         assert response.status_code == 200
 
