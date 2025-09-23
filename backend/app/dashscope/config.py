@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, ConfigDict
 from pydantic_settings import BaseSettings
 
 
@@ -165,8 +165,8 @@ class DashScopeSettings(BaseSettings):
             raise ValueError("Top-p must be between 0.0 and 1.0")
         return v
 
-    class Config:
-        """Pydantic config."""
-        env_file = ".env"
-        case_sensitive = True
-        extra = "ignore"
+    model_config = ConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore"
+    )

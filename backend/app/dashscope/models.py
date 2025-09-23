@@ -31,6 +31,7 @@ class FinishReason(str, Enum):
     LENGTH = "length"
     CONTENT_FILTER = "content_filter"
     FUNCTION_CALL = "function_call"
+    NULL = "null"  # DashScope sometimes returns 'null' as string
 
 
 # Request Models
