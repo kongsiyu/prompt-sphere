@@ -159,6 +159,34 @@ class TestSettingsFieldAccess:
         if settings.anthropic_api_key is not None:
             assert isinstance(settings.anthropic_api_key, str)
 
+        if settings.dashscope_api_key is not None:
+            assert isinstance(settings.dashscope_api_key, str)
+
+    def test_dashscope_settings(self):
+        """Test DashScope-related settings."""
+        settings = Settings()
+
+        # Check DashScope fields exist and have correct types
+        assert hasattr(settings, 'dashscope_api_key')
+        assert hasattr(settings, 'dashscope_base_url')
+        assert hasattr(settings, 'dashscope_default_model')
+        assert hasattr(settings, 'dashscope_timeout')
+        assert hasattr(settings, 'dashscope_max_retries')
+        assert hasattr(settings, 'dashscope_enable_streaming')
+
+        # Check types
+        assert isinstance(settings.dashscope_base_url, str)
+        assert isinstance(settings.dashscope_default_model, str)
+        assert isinstance(settings.dashscope_timeout, int)
+        assert isinstance(settings.dashscope_max_retries, int)
+        assert isinstance(settings.dashscope_enable_streaming, bool)
+
+        # Check reasonable values
+        assert settings.dashscope_timeout > 0
+        assert settings.dashscope_max_retries >= 0
+        assert "dashscope" in settings.dashscope_base_url.lower()
+        assert settings.dashscope_default_model in ["qwen-turbo", "qwen-plus", "qwen-max"]
+
     def test_database_url_format(self):
         """Test database URL format."""
         settings = Settings()

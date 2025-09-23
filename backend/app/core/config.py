@@ -59,6 +59,38 @@ class Settings(BaseSettings):
     openai_api_key: Optional[str] = Field(default=None, description="OpenAI API key", alias="OPENAI_API_KEY")
     anthropic_api_key: Optional[str] = Field(default=None, description="Anthropic API key", alias="ANTHROPIC_API_KEY")
 
+    # DashScope API
+    dashscope_api_key: Optional[str] = Field(
+        default=None,
+        description="DashScope API key for Qwen models",
+        alias="DASHSCOPE_API_KEY"
+    )
+    dashscope_base_url: str = Field(
+        default="https://dashscope.aliyuncs.com",
+        description="DashScope API base URL",
+        alias="DASHSCOPE_BASE_URL"
+    )
+    dashscope_default_model: str = Field(
+        default="qwen-turbo",
+        description="Default Qwen model to use",
+        alias="DASHSCOPE_DEFAULT_MODEL"
+    )
+    dashscope_timeout: int = Field(
+        default=60,
+        description="DashScope request timeout in seconds",
+        alias="DASHSCOPE_TIMEOUT"
+    )
+    dashscope_max_retries: int = Field(
+        default=3,
+        description="Maximum retries for DashScope requests",
+        alias="DASHSCOPE_MAX_RETRIES"
+    )
+    dashscope_enable_streaming: bool = Field(
+        default=True,
+        description="Enable DashScope streaming responses",
+        alias="DASHSCOPE_ENABLE_STREAMING"
+    )
+
     @property
     def cors_origins(self) -> list[str]:
         """Parse CORS origins from string."""

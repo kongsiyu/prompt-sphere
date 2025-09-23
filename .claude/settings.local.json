@@ -2,7 +2,27 @@
   "permissions": {
     "allow": [
       "Bash(gh issue view:*)",
-      "Bash(gh issue:*)"
+      "Bash(gh issue:*)",
+      "Bash(python -m pytest tests/test_database.py --no-header -v)",
+      "Bash(python test_models_import.py:*)",
+      "Bash(python run_tests.py:*)",
+      "Bash(python test:*)",
+      "Bash(python -m pytest tests/test_models_simple.py -v)",
+      "Bash(python -m pytest tests/test_models_working.py -v)",
+      "Bash(python -m pytest tests/test_config_unit.py -v)",
+      "Bash(python -m pytest tests/test_config_simple.py -v)",
+      "Bash(python -m pytest tests/test_models_working.py tests/test_config_simple.py -v --tb=short)",
+      "Bash(python -m pytest tests/test_repositories_unit.py -v --tb=short)",
+      "Bash(python run_pytest.py unit)",
+      "Bash(python run_pytest.py all)",
+      "Bash(python -m pytest tests/test_api_simple.py -v --tb=short)",
+      "Bash(python -m pytest tests/test_api_models.py -v --tb=short)",
+      "Bash(python -m pytest tests/test_api_models.py -v --tb=short --disable-warnings)",
+      "Bash(python -m pytest tests/test_core_database.py --collect-only)",
+      "Bash(python run_pytest.py coverage)",
+      "Bash(python -m pytest tests/test_api_endpoints.py -v --tb=short --disable-warnings)",
+      "Bash(python run_pytest.py)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
