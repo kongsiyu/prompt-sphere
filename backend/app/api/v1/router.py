@@ -2,9 +2,16 @@
 
 from fastapi import APIRouter
 
-from app.api.v1 import endpoints
+from app.api.v1 import endpoints, dashscope
 
 api_router = APIRouter()
 
 # Include all v1 endpoints
 api_router.include_router(endpoints.router, tags=["prompts"])
+
+# Include DashScope endpoints
+api_router.include_router(
+    dashscope.router,
+    prefix="/dashscope",
+    tags=["dashscope"]
+)

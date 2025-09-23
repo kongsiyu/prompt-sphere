@@ -86,49 +86,12 @@ class DashScopeSettingsTestModel(BaseModel):
         return v
 
 
-class TestDashScopeSettings:
-    """Test DashScope configuration settings."""
+# NOTE: Configuration tests moved to test_dashscope_config.py
+# This file focuses on model and validation logic tests
 
-    def test_default_settings(self):
-        """Test default configuration values."""
-        settings = DashScopeSettings()
 
-        assert settings.api_key is None
-        assert settings.base_url == "https://dashscope.aliyuncs.com"
-        assert settings.default_model == "qwen-turbo"
-        assert settings.timeout == 60
-        assert settings.max_retries == 3
-        assert settings.retry_delay == 1.0
-        assert settings.requests_per_minute == 60
-        assert settings.requests_per_day == 1000
-        assert settings.enable_streaming is True
-        assert settings.stream_chunk_size == 1024
-
-    def test_settings_with_environment_variables(self, monkeypatch):
-        """Test settings loaded from environment variables."""
-        monkeypatch.setenv("DASHSCOPE_API_KEY", "test-api-key")
-        monkeypatch.setenv("DASHSCOPE_BASE_URL", "https://custom.api.com")
-        monkeypatch.setenv("DASHSCOPE_DEFAULT_MODEL", "qwen-max")
-        monkeypatch.setenv("DASHSCOPE_TIMEOUT", "120")
-        monkeypatch.setenv("DASHSCOPE_MAX_RETRIES", "5")
-        monkeypatch.setenv("DASHSCOPE_RETRY_DELAY", "2.0")
-        monkeypatch.setenv("DASHSCOPE_REQUESTS_PER_MINUTE", "100")
-        monkeypatch.setenv("DASHSCOPE_REQUESTS_PER_DAY", "2000")
-        monkeypatch.setenv("DASHSCOPE_ENABLE_STREAMING", "false")
-        monkeypatch.setenv("DASHSCOPE_STREAM_CHUNK_SIZE", "2048")
-
-        settings = DashScopeSettings()
-
-        assert settings.api_key == "test-api-key"
-        assert settings.base_url == "https://custom.api.com"
-        assert settings.default_model == "qwen-max"
-        assert settings.timeout == 120
-        assert settings.max_retries == 5
-        assert settings.retry_delay == 2.0
-        assert settings.requests_per_minute == 100
-        assert settings.requests_per_day == 2000
-        assert settings.enable_streaming is False
-        assert settings.stream_chunk_size == 2048
+class TestDashScopeValidationLogic:
+    """Test DashScope validation logic using test models."""
 
     def test_api_key_validation(self):
         """Test API key validation."""

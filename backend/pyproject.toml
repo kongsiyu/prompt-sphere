@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Backend API for AI System Prompt Generator"
 readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
     {name = "AI Prompt Generator Team"}
 ]
@@ -16,7 +16,6 @@ keywords = ["fastapi", "ai", "prompts", "api"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
@@ -44,6 +43,10 @@ dependencies = [
     "langchain-core>=0.1.0,<1.0.0",
     "langchain-community>=0.0.1,<1.0.0",
 ]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
 
 [project.optional-dependencies]
 dev = [

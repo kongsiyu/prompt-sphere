@@ -26,12 +26,31 @@ class DashScopeSettings(BaseSettings):
     default_model: str = Field(
         default="qwen-turbo",
         description="Default Qwen model to use",
-        alias="DASHSCOPE_DEFAULT_MODEL"
+        alias="DASHSCOPE_MODEL"
+    )
+
+    # Default Model Parameters
+    max_tokens: int = Field(
+        default=2000,
+        description="Maximum tokens in response",
+        alias="DASHSCOPE_MAX_TOKENS"
+    )
+
+    temperature: float = Field(
+        default=0.7,
+        description="Sampling temperature for model responses",
+        alias="DASHSCOPE_TEMPERATURE"
+    )
+
+    top_p: float = Field(
+        default=0.8,
+        description="Top-p sampling parameter",
+        alias="DASHSCOPE_TOP_P"
     )
 
     # Request Configuration
     timeout: int = Field(
-        default=60,
+        default=30,
         description="Request timeout in seconds",
         alias="DASHSCOPE_TIMEOUT"
     )
@@ -120,6 +139,30 @@ class DashScopeSettings(BaseSettings):
         """Validate stream chunk size."""
         if v <= 0:
             raise ValueError("Stream chunk size must be positive")
+        return v
+
+    @field_validator("max_tokens")
+    @classmethod
+    def validate_max_tokens(cls, v):
+        """Validate max tokens value."""
+        if v <= 0:
+            raise ValueError("Max tokens must be positive")
+        return v
+
+    @field_validator("temperature")
+    @classmethod
+    def validate_temperature(cls, v):
+        """Validate temperature value."""
+        if not 0.0 <= v <= 2.0:
+            raise ValueError("Temperature must be between 0.0 and 2.0")
+        return v
+
+    @field_validator("top_p")
+    @classmethod
+    def validate_top_p(cls, v):
+        """Validate top_p value."""
+        if not 0.0 <= v <= 1.0:
+            raise ValueError("Top-p must be between 0.0 and 1.0")
         return v
 
     class Config:
