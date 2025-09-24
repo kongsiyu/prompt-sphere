@@ -7,7 +7,7 @@ AgentOrchestrator测试模块
 import pytest
 import asyncio
 from unittest.mock import Mock, AsyncMock, patch
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List
 
 import sys
@@ -231,7 +231,7 @@ class TestTaskHistory:
         performance = history.get_agent_performance("agent_001")
         assert performance["total_tasks"] == 3
         assert performance["success_rate"] == 1.0
-        assert performance["avg_processing_time"] == 0.2
+        assert abs(performance["avg_processing_time"] - 0.2) < 1e-10
 
     def test_max_history_limit(self):
         """测试历史记录数量限制"""
@@ -613,7 +613,7 @@ class TestOrchestratorErrorHandling:
             task_type="task_a",
             task_data={}
         )
-        task.expires_at = datetime.utcnow() - timedelta(minutes=1)  # 已过期
+        task.expires_at = datetime.now(timezone.utc) - timedelta(minutes=1)  # 已过期
 
         orchestrator.pending_tasks[task.id] = task
         orchestrator.task_assignments[task.id] = agent.agent_id

@@ -8,7 +8,7 @@ Agent编排器模块
 import asyncio
 import logging
 from typing import Dict, List, Optional, Any, Set, Callable
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from collections import defaultdict, deque
 import json
@@ -44,8 +44,8 @@ class AgentRegistration:
         self.capabilities = capabilities
         self.weight = weight
         self.max_queue_size = max_queue_size
-        self.registered_at = datetime.utcnow()
-        self.last_heartbeat = datetime.utcnow()
+        self.registered_at = datetime.now(timezone.utc)
+        self.last_heartbeat = datetime.now(timezone.utc)
         self.task_count = 0
         self.error_count = 0
         self.total_processing_time = 0.0
@@ -157,7 +157,7 @@ class TaskHistory:
             "task_type": task_type,
             "success": success,
             "processing_time": processing_time,
-            "timestamp": datetime.utcnow()
+            "timestamp": datetime.now(timezone.utc)
         }
         self.tasks.append(record)
 
@@ -266,6 +266,11 @@ class AgentOrchestrator:
     ) -> bool:
         """注册Agent"""
         try:
+            # 检查agent是否为None
+            if agent is None:
+                logger.error("Cannot register None agent")
+                return False
+
             if agent.agent_id in self.agents:
                 logger.warning(f"Agent {agent.agent_id} already registered")
                 return False
@@ -286,7 +291,8 @@ class AgentOrchestrator:
             return True
 
         except Exception as e:
-            logger.error(f"Failed to register agent {agent.agent_id}: {e}")
+            agent_id = getattr(agent, 'agent_id', 'unknown') if agent else 'unknown'
+            logger.error(f"Failed to register agent {agent_id}: {e}")
             return False
 
     async def unregister_agent(self, agent_id: str) -> bool:
@@ -462,7 +468,7 @@ class AgentOrchestrator:
 
     async def _perform_health_checks(self):
         """执行健康检查"""
-        current_time = datetime.utcnow()
+        current_time = datetime.now(timezone.utc)
 
         for agent_id, registration in self.agents.items():
             try:
@@ -487,7 +493,7 @@ class AgentOrchestrator:
 
     async def _cleanup_expired_tasks(self):
         """清理过期任务"""
-        current_time = datetime.utcnow()
+        current_time = datetime.now(timezone.utc)
         expired_tasks = []
 
         for task_id, task_message in self.pending_tasks.items():
