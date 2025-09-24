@@ -6,7 +6,7 @@ Agent配置管理模块
 """
 
 from typing import Dict, Any, List, Optional, Union
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from enum import Enum
 import os
 
@@ -57,14 +57,16 @@ class AgentSettings(BaseModel):
     enable_detailed_logging: bool = Field(default=False)
     log_message_content: bool = Field(default=False)  # 安全考虑，默认不记录消息内容
 
-    @validator('load_balance_strategy')
+    @field_validator('load_balance_strategy')
+    @classmethod
     def validate_load_balance_strategy(cls, v):
         allowed_strategies = ["round_robin", "least_loaded", "weighted", "random"]
         if v not in allowed_strategies:
             raise ValueError(f"load_balance_strategy must be one of {allowed_strategies}")
         return v
 
-    @validator('log_level')
+    @field_validator('log_level')
+    @classmethod
     def validate_log_level(cls, v):
         allowed_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
         if v.upper() not in allowed_levels:
@@ -123,7 +125,8 @@ class AgentTypeConfig(BaseModel):
     system_prompt: Optional[str] = None
     system_prompt_template: Optional[str] = None
 
-    @validator('supported_task_types', pre=True)
+    @field_validator('supported_task_types', mode='before')
+    @classmethod
     def validate_task_types(cls, v):
         if isinstance(v, str):
             return [v]

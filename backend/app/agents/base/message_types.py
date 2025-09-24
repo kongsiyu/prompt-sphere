@@ -7,9 +7,9 @@ Agent消息类型定义模块
 
 from enum import Enum
 from typing import Optional, Dict, Any, Union, List
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4, UUID
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class MessageType(str, Enum):
@@ -45,7 +45,7 @@ class AgentMessage(BaseModel):
     """Agent消息基类"""
     id: str = Field(default_factory=lambda: str(uuid4()))
     type: MessageType
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     sender_id: str
     recipient_id: Optional[str] = None  # None表示广播消息
     correlation_id: Optional[str] = None  # 用于消息关联
@@ -53,9 +53,10 @@ class AgentMessage(BaseModel):
     expires_at: Optional[datetime] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
-    @validator('expires_at', pre=True)
+    @field_validator('expires_at', mode='before')
+    @classmethod
     def validate_expires_at(cls, v):
-        if v and v <= datetime.utcnow():
+        if v and v <= datetime.now(timezone.utc):
             raise ValueError("expires_at must be in the future")
         return v
 
@@ -88,7 +89,8 @@ class StatusMessage(AgentMessage):
     load_percentage: Optional[float] = Field(None, ge=0, le=100)
     capabilities: List[str] = Field(default_factory=list)
 
-    @validator('load_percentage')
+    @field_validator('load_percentage')
+    @classmethod
     def validate_load_percentage(cls, v):
         if v is not None and (v < 0 or v > 100):
             raise ValueError("load_percentage must be between 0 and 100")
@@ -114,7 +116,7 @@ class HeartbeatMessage(AgentMessage):
     type: MessageType = MessageType.HEARTBEAT
     uptime_seconds: int
     message_count: int = 0
-    last_activity: datetime = Field(default_factory=datetime.utcnow)
+    last_activity: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ErrorMessage(AgentMessage):

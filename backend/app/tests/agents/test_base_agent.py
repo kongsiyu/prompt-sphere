@@ -138,9 +138,9 @@ class TestBaseAgentLifecycle:
         """测试启动停止生命周期"""
         assert not test_agent.is_running
 
-        # 启动后台任务模拟start
-        start_task = asyncio.create_task(test_agent.start())
-        await asyncio.sleep(0.1)  # 让启动过程开始
+        # 启动Agent
+        await test_agent.start()
+        await asyncio.sleep(0.1)  # 让启动过程完成
 
         # 检查状态
         assert test_agent.is_running
@@ -148,7 +148,6 @@ class TestBaseAgentLifecycle:
 
         # 停止Agent
         await test_agent.stop()
-        start_task.cancel()
 
         assert not test_agent.is_running
         assert test_agent.status == AgentStatus.STOPPED
@@ -156,30 +155,29 @@ class TestBaseAgentLifecycle:
     @pytest.mark.asyncio
     async def test_restart(self, test_agent):
         """测试重启功能"""
-        # 模拟启动和重启
-        start_task = asyncio.create_task(test_agent.start())
+        # 启动和重启
+        await test_agent.start()
         await asyncio.sleep(0.1)
 
         original_start_time = test_agent._start_time
         await test_agent.restart()
+        await asyncio.sleep(0.1)
 
         # 重启后开始时间应该更新
         assert test_agent._start_time != original_start_time
 
         await test_agent.stop()
-        start_task.cancel()
 
     @pytest.mark.asyncio
     async def test_duplicate_start_prevention(self, test_agent):
         """测试防止重复启动"""
-        start_task = asyncio.create_task(test_agent.start())
+        await test_agent.start()
         await asyncio.sleep(0.1)
 
         # 尝试再次启动应该被忽略
         await test_agent.start()  # 不应该抛出异常
 
         await test_agent.stop()
-        start_task.cancel()
 
 
 class TestBaseAgentMessageHandling:

@@ -4,9 +4,9 @@ from .base_agent import BaseAgent
 from .orchestrator import AgentOrchestrator
 from .message_types import (
     AgentMessage,
-    AgentResponse,
+    ResponseMessage,
     MessageType,
-    AgentError,
+    ErrorMessage,
     AgentStatus,
 )
 
@@ -14,8 +14,8 @@ __all__ = [
     "BaseAgent",
     "AgentOrchestrator",
     "AgentMessage",
-    "AgentResponse",
+    "ResponseMessage",
     "MessageType",
-    "AgentError",
+    "ErrorMessage",
     "AgentStatus",
 ]

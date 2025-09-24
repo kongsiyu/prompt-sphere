@@ -9,7 +9,7 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List, Callable, Set
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from contextlib import asynccontextmanager
 
 from .message_types import (
@@ -57,7 +57,7 @@ class BaseAgent(ABC):
         self._status = AgentStatus.IDLE
         self._is_running = False
         self._start_time: Optional[datetime] = None
-        self._last_activity = datetime.utcnow()
+        self._last_activity = datetime.now(timezone.utc)
 
         # 消息队列
         self._message_queue: asyncio.Queue = asyncio.Queue(maxsize=max_queue_size)
@@ -81,6 +81,7 @@ class BaseAgent(ABC):
         # 后台任务
         self._heartbeat_task: Optional[asyncio.Task] = None
         self._cleanup_task: Optional[asyncio.Task] = None
+        self._message_loop_task: Optional[asyncio.Task] = None
 
     def _register_default_handlers(self):
         """注册默认消息处理器"""
@@ -106,7 +107,7 @@ class BaseAgent(ABC):
     def uptime_seconds(self) -> int:
         """获取运行时间（秒）"""
         if self._start_time:
-            return int((datetime.utcnow() - self._start_time).total_seconds())
+            return int((datetime.now(timezone.utc) - self._start_time).total_seconds())
         return 0
 
     @property
@@ -130,15 +131,15 @@ class BaseAgent(ABC):
 
             # 设置状态
             self._is_running = True
-            self._start_time = datetime.utcnow()
+            self._start_time = datetime.now(timezone.utc)
             self._status = AgentStatus.IDLE
 
             # 启动后台任务
             self._heartbeat_task = asyncio.create_task(self._heartbeat_loop())
             self._cleanup_task = asyncio.create_task(self._cleanup_loop())
 
-            # 启动消息处理循环
-            await self._message_processing_loop()
+            # 启动消息处理循环作为后台任务
+            self._message_loop_task = asyncio.create_task(self._message_processing_loop())
 
         except Exception as e:
             logger.error(f"Failed to start agent {self.agent_id}: {e}")
@@ -167,6 +168,8 @@ class BaseAgent(ABC):
                 self._heartbeat_task.cancel()
             if self._cleanup_task:
                 self._cleanup_task.cancel()
+            if self._message_loop_task:
+                self._message_loop_task.cancel()
 
             # 清理资源
             await self._cleanup_resources()
@@ -197,7 +200,7 @@ class BaseAgent(ABC):
         try:
             await self._message_queue.put(message)
             self._message_count += 1
-            self._last_activity = datetime.utcnow()
+            self._last_activity = datetime.now(timezone.utc)
         except asyncio.QueueFull:
             error_msg = f"Message queue full for agent {self.agent_id}"
             logger.error(error_msg)
@@ -332,7 +335,7 @@ class BaseAgent(ABC):
 
     async def _handle_task_message(self, message: TaskMessage):
         """处理任务消息"""
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         self._status = AgentStatus.PROCESSING
         self._task_count += 1
 
@@ -345,7 +348,7 @@ class BaseAgent(ABC):
             result = await self.process_task(message)
 
             # 计算处理时间
-            processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+            processing_time = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
 
             # 发送成功响应
             response = create_response_message(
@@ -359,7 +362,7 @@ class BaseAgent(ABC):
 
         except Exception as e:
             # 发送错误响应
-            processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+            processing_time = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
             response = create_response_message(
                 sender_id=self.agent_id,
                 original_message=message,
@@ -390,7 +393,7 @@ class BaseAgent(ABC):
     async def _handle_heartbeat(self, message: HeartbeatMessage):
         """处理心跳消息"""
         # 默认实现：更新活动时间
-        self._last_activity = datetime.utcnow()
+        self._last_activity = datetime.now(timezone.utc)
 
     async def _handle_error_message(self, message: ErrorMessage):
         """处理错误消息"""
