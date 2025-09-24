@@ -7,7 +7,7 @@ BaseAgent测试模块
 import pytest
 import asyncio
 from unittest.mock import Mock, AsyncMock, patch
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List
 
 import sys
@@ -216,7 +216,7 @@ class TestBaseAgentMessageHandling:
             task_type="test",
             task_data={}
         )
-        expired_task.expires_at = datetime.utcnow() - timedelta(minutes=1)
+        expired_task.expires_at = datetime.now(timezone.utc) - timedelta(minutes=1)
 
         with pytest.raises(RuntimeError, match="Task message expired"):
             await test_agent._handle_task_message(expired_task)
@@ -293,7 +293,7 @@ class TestBaseAgentStatus:
         assert test_agent.uptime_seconds == 0
 
         # 模拟启动时间
-        test_agent._start_time = datetime.utcnow() - timedelta(seconds=30)
+        test_agent._start_time = datetime.now(timezone.utc) - timedelta(seconds=30)
         uptime = test_agent.uptime_seconds
         assert 25 <= uptime <= 35  # 允许一定误差
 
@@ -352,11 +352,11 @@ class TestBaseAgentConcurrency:
             tasks.append(task)
 
         # 并发处理任务
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         await asyncio.gather(
             *[test_agent._handle_task_message(task) for task in tasks]
         )
-        processing_time = (datetime.utcnow() - start_time).total_seconds()
+        processing_time = (datetime.now(timezone.utc) - start_time).total_seconds()
 
         # 并发处理应该比顺序处理更快
         assert processing_time < 0.3  # 3个任务 * 0.1秒 = 0.3秒

@@ -198,7 +198,8 @@ class BaseAgent(ABC):
     async def send_message(self, message: AgentMessage):
         """发送消息到队列"""
         try:
-            await self._message_queue.put(message)
+            # 使用 put_nowait 立即检查队列是否满
+            self._message_queue.put_nowait(message)
             self._message_count += 1
             self._last_activity = datetime.now(timezone.utc)
         except asyncio.QueueFull:
@@ -341,7 +342,7 @@ class BaseAgent(ABC):
 
         try:
             # 检查任务是否过期
-            if message.expires_at and message.expires_at <= datetime.utcnow():
+            if message.expires_at and message.expires_at <= datetime.now(timezone.utc):
                 raise RuntimeError("Task message expired")
 
             # 处理任务
