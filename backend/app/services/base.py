@@ -8,10 +8,11 @@
 """
 
 import logging
+import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Type, TypeVar, Generic, Callable, Union
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
@@ -36,7 +37,7 @@ class ServiceError(Exception):
         self.message = message
         self.code = code
         self.details = details or {}
-        self.timestamp = datetime.utcnow()
+        self.timestamp = datetime.now(timezone.utc)
 
 
 class ValidationError(ServiceError):
@@ -136,7 +137,7 @@ class BaseService(ABC):
         log_data = {
             "service": self.service_name,
             "operation": operation,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             **(details or {})
         }
 
@@ -380,7 +381,7 @@ class BaseService(ABC):
                 validator = rule["validator"]
                 if callable(validator):
                     try:
-                        if hasattr(validator, '__await__'):
+                        if asyncio.iscoroutinefunction(validator):
                             is_valid = await validator(value)
                         else:
                             is_valid = validator(value)

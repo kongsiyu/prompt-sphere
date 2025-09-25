@@ -16,7 +16,7 @@ import time
 from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
 from fastapi import status
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.api.health import router, _app_start_time, measure_response_time
 from app.api import APIResponse
@@ -35,7 +35,7 @@ def mock_system_health():
     """模拟系统健康状态。"""
     return {
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "database": {"status": "healthy"},
         "redis": {"status": "healthy"},
         "services": {"overall_status": "healthy"},
@@ -161,7 +161,7 @@ class TestSystemHealthEndpoint:
         """测试系统降级状态。"""
         degraded_health = {
             "status": "degraded",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "database": {"status": "healthy"},
             "redis": {"status": "unhealthy", "error": "Connection failed"},
             "services": {"overall_status": "healthy"},
@@ -183,7 +183,7 @@ class TestSystemHealthEndpoint:
         """测试系统不健康状态。"""
         unhealthy_health = {
             "status": "unhealthy",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "database": {"status": "unhealthy", "error": "Database down"},
             "redis": {"status": "unhealthy", "error": "Redis down"},
             "services": {"overall_status": "unhealthy"},
@@ -399,7 +399,7 @@ class TestCacheHealthEndpoint:
         mock_cache = AsyncMock()
         mock_cache.namespace = "health_check"
         mock_cache.set.return_value = True
-        mock_cache.get.return_value = {"test": "data", "timestamp": datetime.utcnow().isoformat()}
+        mock_cache.get.return_value = {"test": "data", "timestamp": datetime.now(timezone.utc).isoformat()}
         mock_cache.exists.return_value = True
         mock_cache.delete.return_value = 1
         mock_get_cache.return_value = mock_cache

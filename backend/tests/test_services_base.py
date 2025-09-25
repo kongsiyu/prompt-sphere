@@ -13,7 +13,7 @@ import pytest
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 from typing import Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.services.base import (
     BaseService,
@@ -50,12 +50,15 @@ class TestModel:
 class TestBaseService(BaseService):
     """测试用的基础服务类。"""
 
+    def __init__(self, cache_namespace: str = "test", enable_caching: bool = True):
+        super().__init__(cache_namespace=cache_namespace, enable_caching=enable_caching)
+
     async def health_check(self) -> Dict[str, Any]:
         """实现健康检查方法。"""
         return {
             "status": "healthy",
             "service": self.service_name,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
 
@@ -154,7 +157,7 @@ def clear_service_registry():
     _service_registry.clear()
 
 
-class TestBaseService:
+class TestBaseServiceClass:
     """BaseService测试类。"""
 
     @pytest.mark.asyncio
@@ -241,8 +244,10 @@ class TestBaseService:
         with pytest.raises(ValidationError) as exc_info:
             await base_service.validate_input(data, rules)
 
-        assert "name" in str(exc_info.value.message)
-        assert "required" in str(exc_info.value.message)
+        error_details = exc_info.value.details.get("errors", [])
+        error_text = " ".join(error_details)
+        assert "name" in error_text
+        assert "required" in error_text
 
     @pytest.mark.asyncio
     async def test_validate_input_type_mismatch(self, base_service):
@@ -256,7 +261,9 @@ class TestBaseService:
         with pytest.raises(ValidationError) as exc_info:
             await base_service.validate_input(data, rules)
 
-        assert "type" in str(exc_info.value.message)
+        error_details = exc_info.value.details.get("errors", [])
+        error_text = " ".join(error_details)
+        assert "type" in error_text
 
     @pytest.mark.asyncio
     async def test_validate_input_length_validation(self, base_service):
@@ -270,8 +277,9 @@ class TestBaseService:
         with pytest.raises(ValidationError) as exc_info:
             await base_service.validate_input(data, rules)
 
-        error_message = str(exc_info.value.message)
-        assert "at least 3 characters" in error_message or "at most 1000 characters" in error_message
+        error_details = exc_info.value.details.get("errors", [])
+        error_text = " ".join(error_details)
+        assert "at least 3 characters" in error_text or "at most 1000 characters" in error_text
 
     @pytest.mark.asyncio
     async def test_validate_input_custom_validator(self, base_service):

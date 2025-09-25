@@ -12,7 +12,7 @@ import logging
 import asyncio
 import time
 from typing import Dict, Any, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from fastapi.responses import JSONResponse
@@ -118,7 +118,7 @@ async def health_check():
         response_data = {
             "overall": {
                 "status": health_info.get("status", "unknown"),
-                "timestamp": health_info.get("timestamp", datetime.utcnow().isoformat()),
+                "timestamp": health_info.get("timestamp", datetime.now(timezone.utc).isoformat()),
                 "uptime": uptime,
                 "version": settings.app_version,
                 "check_duration": check_time
@@ -151,19 +151,19 @@ async def health_check():
                 response_data["components"]["cache"] = {
                     "status": "healthy",
                     "response_time": cache_time,
-                    "last_check": datetime.utcnow().isoformat()
+                    "last_check": datetime.now(timezone.utc).isoformat()
                 }
             else:
                 response_data["components"]["cache"] = {
                     "status": "degraded",
                     "response_time": cache_time,
-                    "last_check": datetime.utcnow().isoformat(),
+                    "last_check": datetime.now(timezone.utc).isoformat(),
                     "error": "Cache set operation failed"
                 }
         except Exception as e:
             response_data["components"]["cache"] = {
                 "status": "unhealthy",
-                "last_check": datetime.utcnow().isoformat(),
+                "last_check": datetime.now(timezone.utc).isoformat(),
                 "error": str(e)
             }
 
@@ -293,7 +293,7 @@ async def redis_health_check():
         result_data = {
             "status": "healthy" if health_result else "unhealthy",
             "response_time": response_time,
-            "last_check": datetime.utcnow().isoformat(),
+            "last_check": datetime.now(timezone.utc).isoformat(),
             "component": "redis",
             "connection_pool": {
                 "size": redis_client._connection_pool.connection_kwargs.get("max_connections", "unknown") if redis_client._connection_pool else "unknown"
@@ -381,7 +381,7 @@ async def services_health_check():
 
         health_result["response_time"] = response_time
         health_result["component"] = "services"
-        health_result["last_check"] = datetime.utcnow().isoformat()
+        health_result["last_check"] = datetime.now(timezone.utc).isoformat()
 
         # 添加每个服务的响应时间测试
         for service_name, service_health in health_result.get("services", {}).items():
@@ -433,12 +433,12 @@ async def cache_health_check():
 
         cache = get_cache("health_check")
         test_key = "cache_health_test"
-        test_value = {"test": "data", "timestamp": datetime.utcnow().isoformat()}
+        test_value = {"test": "data", "timestamp": datetime.now(timezone.utc).isoformat()}
 
         result_data = {
             "status": "healthy",
             "component": "cache",
-            "last_check": datetime.utcnow().isoformat(),
+            "last_check": datetime.now(timezone.utc).isoformat(),
             "operations": {},
             "namespace": cache.namespace
         }
@@ -608,7 +608,7 @@ async def liveness_check():
             data={
                 "alive": True,
                 "uptime": uptime,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             },
             message="应用存活"
         )

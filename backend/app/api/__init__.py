@@ -15,7 +15,7 @@ from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
 from fastapi.openapi.utils import get_openapi
 import logging
 from typing import Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.core.config import get_settings
 from app.core.dependencies import get_system_health
@@ -151,7 +151,7 @@ class APIResponse:
             "success": True,
             "data": data,
             "message": message,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "request_id": request_id
         }
 
@@ -181,7 +181,7 @@ class APIResponse:
                 "message": message,
                 "details": details or {}
             },
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "request_id": request_id
         }
 
@@ -224,7 +224,7 @@ class APIResponse:
                 }
             },
             "message": message,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "request_id": request_id
         }
 
@@ -257,7 +257,7 @@ def create_api_router() -> APIRouter:
             "health_url": "/health",
             "api_prefix": settings.api_v1_prefix,
             "environment": "development" if settings.debug else "production",
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         })
 
     # API信息端点
