@@ -311,19 +311,56 @@ def setup_api_middleware(app: FastAPI) -> None:
     """
     settings = get_settings()
 
-    # CORS中间件
+    # 1. 安全头中间件 - 优先级最高
+    from app.middleware import create_security_headers_middleware
+    security_middleware = create_security_headers_middleware(
+        debug_mode=settings.debug,
+        strict_csp=not settings.debug,
+        enable_csrf=True
+    )
+    app.add_middleware(security_middleware.__class__, **security_middleware.__dict__)
+
+    # 2. 速率限制中间件
+    from app.middleware import RateLimitMiddleware
+    rate_limit_middleware = RateLimitMiddleware(
+        calls=1000,  # 每小时1000次请求
+        period=3600,  # 1小时
+        scope="global",
+        exempt_paths=[
+            "/health",
+            "/api/health",
+            "/",
+            "/info",
+            "/docs",
+            "/redoc",
+            "/openapi.json"
+        ],
+        custom_limits={
+            "/api/v1/auth": {"calls": 10, "period": 300, "scope": "auth"},  # 认证端点更严格
+            "/api/v1/dashscope": {"calls": 100, "period": 3600, "scope": "ai"},  # AI服务限制
+        }
+    )
+    app.add_middleware(RateLimitMiddleware, **rate_limit_middleware.__dict__)
+
+    # 3. CORS中间件
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
-        allow_headers=["*"],
+        allow_headers=[
+            "*",
+            "X-CSRF-Token",  # 添加CSRF令牌头部支持
+            "X-RateLimit-Limit",
+            "X-RateLimit-Remaining",
+            "X-RateLimit-Reset",
+        ],
     )
 
-    # Gzip压缩中间件
+    # 4. Gzip压缩中间件 - 放在最后
     app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-    logger.info("API middleware configured")
+    logger.info("API middleware configured with security and rate limiting")
 
 
 def setup_exception_handlers(app: FastAPI) -> None:
