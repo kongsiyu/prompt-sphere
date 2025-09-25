@@ -23,7 +23,7 @@ from app.core.cache import get_cache
 from app.core.config import get_settings
 from app.services.base import health_check_all_services
 from app.api import APIResponse
-from backend.database.session import DatabaseSession, check_session_health
+from database.session import DatabaseSession, check_session_health
 
 # 配置日志
 logger = logging.getLogger(__name__)

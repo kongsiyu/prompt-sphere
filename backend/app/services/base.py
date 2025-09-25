@@ -18,7 +18,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.cache import CacheManager, get_cache
 from app.core.redis import RedisClient, get_redis_client
-from backend.database.session import DatabaseSession, get_session, get_transaction
+from database.session import DatabaseSession, get_session, get_transaction
 
 # 配置日志
 logger = logging.getLogger(__name__)

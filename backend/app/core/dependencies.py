@@ -19,7 +19,7 @@ from app.core.cache import CacheManager, get_cache, get_session_cache, SessionCa
 from app.core.redis import RedisClient, get_redis_client
 from app.core.config import Settings, get_settings
 from app.services.base import BaseService, get_service, health_check_all_services
-from backend.database.session import DatabaseSession, get_session, get_transaction
+from database.session import DatabaseSession, get_session, get_transaction
 
 # 配置日志
 logger = logging.getLogger(__name__)
@@ -41,16 +41,16 @@ async def get_database_session() -> AsyncGenerator[DatabaseSession, None]:
     Yields:
         DatabaseSession: 数据库会话实例
     """
-    async with get_session() as session:
-        try:
+    try:
+        async with get_session() as session:
             logger.debug("Created database session for request")
             yield session
-        except Exception as e:
-            logger.error(f"Database session error: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Database connection error"
-            ) from e
+    except Exception as e:
+        logger.error(f"Database session error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database connection error"
+        ) from e
 
 
 async def get_database_transaction() -> AsyncGenerator[DatabaseSession, None]:
@@ -60,16 +60,16 @@ async def get_database_transaction() -> AsyncGenerator[DatabaseSession, None]:
     Yields:
         DatabaseSession: 数据库事务会话实例
     """
-    async with get_transaction() as session:
-        try:
+    try:
+        async with get_transaction() as session:
             logger.debug("Created database transaction for request")
             yield session
-        except Exception as e:
-            logger.error(f"Database transaction error: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Database transaction error"
-            ) from e
+    except Exception as e:
+        logger.error(f"Database transaction error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database transaction error"
+        ) from e
 
 
 # === Redis和缓存依赖 ===
@@ -280,8 +280,8 @@ async def get_system_health() -> Dict[str, Any]:
             "errors": []
         }
 
-        from datetime import datetime
-        health_info["timestamp"] = datetime.utcnow().isoformat()
+        from datetime import datetime, timezone
+        health_info["timestamp"] = datetime.now(timezone.utc).isoformat()
 
         # 检查数据库连接
         try:
