@@ -6,8 +6,23 @@ import time
 from typing import Optional, Any, Dict, Union, Callable, Awaitable
 from urllib.parse import urlparse
 
-import aioredis
-from aioredis import Redis, ConnectionError, TimeoutError
+# 使用redis库而非aioredis来避免Python 3.13兼容性问题
+try:
+    import aioredis
+    from aioredis import Redis, ConnectionError as RedisConnectionError
+    # 处理Python 3.13兼容性问题
+    try:
+        from aioredis import TimeoutError as RedisTimeoutError
+    except (ImportError, TypeError):
+        import asyncio
+        RedisTimeoutError = asyncio.TimeoutError
+    USE_AIOREDIS = True
+except (ImportError, TypeError):
+    # 回退到redis库
+    import redis.asyncio as redis
+    from redis.asyncio import Redis
+    from redis.exceptions import ConnectionError as RedisConnectionError, TimeoutError as RedisTimeoutError
+    USE_AIOREDIS = False
 
 from .config import get_settings
 
@@ -26,7 +41,7 @@ def retry_on_connection_error(max_retries: Optional[int] = None, backoff_factor:
             for attempt in range(_max_retries + 1):
                 try:
                     return await func(self, *args, **kwargs)
-                except (ConnectionError, TimeoutError, OSError) as e:
+                except (RedisConnectionError, RedisTimeoutError, OSError) as e:
                     last_exception = e
                     if attempt == _max_retries:
                         logger.error(f"Redis操作失败，已重试{_max_retries}次: {e}")
@@ -71,17 +86,28 @@ class RedisClient:
                 password_part = f":{self.settings.redis_password}@" if self.settings.redis_password else ""
                 redis_url = f"redis://{password_part}{self.settings.redis_host}:{self.settings.redis_port}/{self.settings.redis_db}"
 
-            # Create connection pool
-            self._connection_pool = aioredis.ConnectionPool.from_url(
-                redis_url,
-                max_connections=self.settings.redis_pool_size,
-                socket_timeout=self.settings.redis_timeout,
-                socket_connect_timeout=self.settings.redis_timeout,
-                health_check_interval=self.settings.redis_health_check_interval
-            )
-
-            # Create Redis client
-            self._redis = aioredis.Redis(connection_pool=self._connection_pool)
+            # Create connection pool based on available library
+            if USE_AIOREDIS:
+                # 使用aioredis（如果可用）
+                self._connection_pool = aioredis.ConnectionPool.from_url(
+                    redis_url,
+                    max_connections=self.settings.redis_pool_size,
+                    socket_timeout=self.settings.redis_timeout,
+                    socket_connect_timeout=self.settings.redis_timeout,
+                    health_check_interval=self.settings.redis_health_check_interval
+                )
+                # Create Redis client
+                self._redis = aioredis.Redis(connection_pool=self._connection_pool)
+            else:
+                # 使用redis.asyncio作为回退
+                self._redis = redis.from_url(
+                    redis_url,
+                    max_connections=self.settings.redis_pool_size,
+                    socket_timeout=self.settings.redis_timeout,
+                    socket_connect_timeout=self.settings.redis_timeout,
+                    health_check_interval=self.settings.redis_health_check_interval
+                )
+                self._connection_pool = self._redis.connection_pool
 
             # Test connection
             await self._redis.ping()
@@ -101,11 +127,17 @@ class RedisClient:
     async def disconnect(self) -> None:
         """Disconnect from Redis server."""
         if self._redis:
-            await self._redis.aclose()
+            if USE_AIOREDIS:
+                await self._redis.aclose()
+            else:
+                await self._redis.aclose()  # redis.asyncio也使用aclose
             self._redis = None
 
         if self._connection_pool:
-            await self._connection_pool.aclose()
+            if USE_AIOREDIS:
+                await self._connection_pool.aclose()
+            else:
+                await self._connection_pool.aclose()  # redis.asyncio也使用aclose
             self._connection_pool = None
 
         logger.info("Disconnected from Redis")
