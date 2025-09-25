@@ -1,48 +1,122 @@
 """认证模块初始化
 
-此模块提供OAuth 2.0和DingTalk认证功能的统一入口，包括：
-- OAuth客户端类导出
-- 认证异常类导出
-- 工厂函数和便捷方法
+此模块提供完整的身份验证和授权功能，包括：
+- JWT令牌管理
+- OAuth 2.0和DingTalk认证
+- 认证中间件和依赖注入
+- 安全配置和密钥管理
 """
 
-from .dingtalk import DingTalkOAuthClient, DingTalkUserInfo
-from .exceptions import (
-    AccessDeniedError,
+# JWT和令牌管理
+from .jwt import JWTHandler, JWTPayload, get_jwt_handler
+from .tokens import TokenManager, get_token_manager
+
+# 认证中间件和依赖注入
+from .middleware import (
+    get_current_user_payload,
+    get_current_user_required,
+    get_current_user_session,
+    require_roles,
+    require_any_role,
+    require_all_roles,
+    require_admin,
+    require_user,
+    require_api_access,
+    require_permissions,
+    optional_authentication,
+    rate_limit,
     AuthenticationError,
-    ConfigurationError,
-    DingTalkAPIError,
-    HTTPError,
-    InvalidGrantError,
-    InvalidStateError,
-    OAuthError,
-    TokenExpiredError,
-    TokenInvalidError,
-    UserInfoError,
+    AuthorizationError,
+    # 预定义依赖项
+    CurrentUser,
+    CurrentUserOptional,
+    CurrentUserSession,
+    RequireAdmin,
+    RequireUser,
+    RequireApiAccess,
+    AuthRateLimit,
+    ApiRateLimit,
+    AdminRateLimit,
 )
-from .oauth import OAuthClient, TokenResponse, UserInfo
+
+# OAuth功能（如果存在）
+try:
+    from .dingtalk import DingTalkOAuthClient, DingTalkUserInfo
+    from .oauth import OAuthClient, TokenResponse, UserInfo
+    from .exceptions import (
+        AccessDeniedError,
+        ConfigurationError,
+        DingTalkAPIError,
+        HTTPError,
+        InvalidGrantError,
+        InvalidStateError,
+        OAuthError,
+        TokenExpiredError,
+        TokenInvalidError,
+        UserInfoError,
+    )
+    _OAUTH_AVAILABLE = True
+except ImportError:
+    _OAUTH_AVAILABLE = False
 
 __all__ = [
-    # OAuth客户端类
-    "OAuthClient",
-    "DingTalkOAuthClient",
-    # 数据模型
-    "TokenResponse",
-    "UserInfo",
-    "DingTalkUserInfo",
-    # 异常类
+    # JWT和令牌管理
+    "JWTHandler",
+    "JWTPayload",
+    "get_jwt_handler",
+    "TokenManager",
+    "get_token_manager",
+
+    # 认证中间件
+    "get_current_user_payload",
+    "get_current_user_required",
+    "get_current_user_session",
+    "require_roles",
+    "require_any_role",
+    "require_all_roles",
+    "require_admin",
+    "require_user",
+    "require_api_access",
+    "require_permissions",
+    "optional_authentication",
+    "rate_limit",
     "AuthenticationError",
-    "OAuthError",
-    "InvalidStateError",
-    "InvalidGrantError",
-    "AccessDeniedError",
-    "TokenExpiredError",
-    "TokenInvalidError",
-    "UserInfoError",
-    "DingTalkAPIError",
-    "ConfigurationError",
-    "HTTPError",
+    "AuthorizationError",
+
+    # 预定义依赖项
+    "CurrentUser",
+    "CurrentUserOptional",
+    "CurrentUserSession",
+    "RequireAdmin",
+    "RequireUser",
+    "RequireApiAccess",
+    "AuthRateLimit",
+    "ApiRateLimit",
+    "AdminRateLimit",
 ]
+
+# 如果OAuth功能可用，添加到导出列表
+if _OAUTH_AVAILABLE:
+    __all__.extend([
+        # OAuth客户端类
+        "OAuthClient",
+        "DingTalkOAuthClient",
+        # 数据模型
+        "TokenResponse",
+        "UserInfo",
+        "DingTalkUserInfo",
+        # 异常类
+        "OAuthError",
+        "InvalidStateError",
+        "InvalidGrantError",
+        "AccessDeniedError",
+        "TokenExpiredError",
+        "TokenInvalidError",
+        "UserInfoError",
+        "DingTalkAPIError",
+        "ConfigurationError",
+        "HTTPError",
+    ])
 
 
 def create_dingtalk_client(
@@ -51,7 +125,7 @@ def create_dingtalk_client(
     redirect_uri: str,
     corp_id: str = None,
     **kwargs
-) -> DingTalkOAuthClient:
+):
     """创建DingTalk OAuth客户端的工厂函数
 
     Args:
@@ -64,6 +138,9 @@ def create_dingtalk_client(
     Returns:
         配置好的DingTalkOAuthClient实例
     """
+    if not _OAUTH_AVAILABLE:
+        raise ImportError("OAuth功能不可用，请检查相关依赖项")
+
     return DingTalkOAuthClient(
         client_id=client_id,
         client_secret=client_secret,
