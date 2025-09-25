@@ -43,7 +43,7 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = Field(
-        default="mysql+aiomysql://root:password@localhost:3306/prompt_sphere",
+        default="sqlite+aiosqlite:///E:/ProgramData/git/repository/github/kongsiyu/prompt-sphere/prompt-sphere/backend/data/prompt_sphere.db",
         description="Database connection URL",
         alias="DATABASE_URL"
     )
