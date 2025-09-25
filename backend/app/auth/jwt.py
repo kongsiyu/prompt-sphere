@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, Union
 
-import jwt
+from jose import jwt
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from pydantic import BaseModel
@@ -171,7 +171,7 @@ class JWTHandler:
         except jwt.ExpiredSignatureError:
             logger.debug("JWT token has expired")
             return None
-        except jwt.InvalidTokenError as e:
+        except jwt.JWTError as e:
             logger.debug(f"Invalid JWT token: {e}")
             return None
         except Exception as e:
