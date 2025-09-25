@@ -34,7 +34,8 @@
       "Read(//d/ProgramData/git/repository/github/kongsiyu/epic-ai-system-prompt-generator/backend/app/services/**)",
       "Read(//d/ProgramData/git/repository/github/kongsiyu/epic-ai-system-prompt-generator/backend/**)",
       "Bash(python -m pytest tests/test_dashscope_api.py -v)",
-      "Read(//d/ProgramData/git/repository/github/kongsiyu/epic-ai-system-prompt-generator/**)"
+      "Read(//d/ProgramData/git/repository/github/kongsiyu/epic-ai-system-prompt-generator/**)",
+      "Read(//d/ProgramData/git/repository/github/kongsiyu/prompt-sphere/epic-ai-system-prompt-generator/**)"
     ],
     "deny": [],
     "ask": []
