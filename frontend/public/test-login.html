@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>模拟登录测试</title>
+</head>
+<body>
+    <h1>模拟用户登录</h1>
+    <button onclick="login()">模拟登录</button>
+    <button onclick="logout()">注销</button>
+
+    <script>
+        function login() {
+            localStorage.setItem('authToken', 'test-token-123');
+            localStorage.setItem('userEmail', 'test@example.com');
+            alert('模拟登录成功！');
+            window.location.href = '/';
+        }
+
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userEmail');
+            alert('已注销！');
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>

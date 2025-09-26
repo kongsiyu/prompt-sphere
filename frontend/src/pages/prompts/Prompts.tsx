@@ -19,7 +19,7 @@ const Prompts: React.FC = () => {
         </div>
         <div className="mt-4 sm:mt-0">
           <Link
-            to="/prompts/create"
+            to="/prompt-editor/create"
             className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center"
           >
             <Plus className="h-5 w-5 mr-2" />
@@ -54,7 +54,7 @@ const Prompts: React.FC = () => {
             <h3 className="text-lg font-medium text-gray-900 mb-2">暂无提示词</h3>
             <p className="text-gray-500 mb-6">开始创建您的第一个提示词</p>
             <Link
-              to="/prompts/create"
+              to="/prompt-editor/create"
               className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors inline-flex items-center"
             >
               <Plus className="h-5 w-5 mr-2" />

@@ -4,7 +4,8 @@
  */
 
 import React from 'react';
-import { Menu, Sun, Moon, Monitor, Settings, User } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Menu, Sun, Moon, Monitor, Settings, User, LogOut } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/ui/Button';
@@ -49,6 +50,12 @@ export const Header: React.FC<HeaderProps> = ({
   logo,
 }) => {
   const { theme, setTheme, toggleTheme } = useTheme();
+  const location = useLocation();
+  const [userMenuOpen, setUserMenuOpen] = React.useState(false);
+
+  // 检查用户认证状态
+  const isAuthenticated = !!localStorage.getItem('authToken');
+  const userEmail = localStorage.getItem('userEmail') || 'user@example.com';
 
   // 主题图标映射
   const themeIcons = {
@@ -59,6 +66,13 @@ export const Header: React.FC<HeaderProps> = ({
 
   const ThemeIcon = themeIcons[theme];
 
+  // 注销处理
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userEmail');
+    window.location.href = '/auth/login';
+  };
+
   return (
     <header
       className={cn(
@@ -66,7 +80,7 @@ export const Header: React.FC<HeaderProps> = ({
         className
       )}
     >
-      <div className="container mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-4">
+      <div className="flex h-16 items-center justify-between px-6 w-full">
         {/* 左侧：菜单按钮 + Logo + 标题 */}
         <div className="flex items-center gap-4">
           {/* 移动端菜单按钮 */}
@@ -83,31 +97,29 @@ export const Header: React.FC<HeaderProps> = ({
           )}
 
           {/* Logo 和标题 */}
-          <div className="flex items-center gap-3">
-            {logo && <div className="flex items-center">{logo}</div>}
+          <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+            {logo ? (
+              <div className="flex items-center">{logo}</div>
+            ) : (
+              <div className="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-lg text-white font-bold text-sm">
+                AI
+              </div>
+            )}
             <div className="flex flex-col">
-              <h1 className="text-lg font-semibold leading-tight">{title}</h1>
+              <h1 className="text-lg font-semibold leading-tight">Prompt Generator</h1>
               <span className="hidden text-xs text-muted-foreground sm:block">
                 智能提示词生成器
               </span>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* 中间：导航菜单（桌面端） */}
         <nav className="hidden lg:flex items-center space-x-1">
-          <Button variant="ghost" size="sm">
-            工作台
-          </Button>
-          <Button variant="ghost" size="sm">
-            模板库
-          </Button>
-          <Button variant="ghost" size="sm">
-            我的项目
-          </Button>
-          <Button variant="ghost" size="sm">
-            帮助文档
-          </Button>
+          <NavItem href="/dashboard" label="工作台" />
+          <NavItem href="/prompts" label="提示词管理" />
+          <NavItem href="/templates" label="模板库" />
+          <NavItem href="/settings" label="设置" />
         </nav>
 
         {/* 右侧：主题切换 + 用户菜单 */}
@@ -161,39 +173,99 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
 
-          {/* 设置按钮 */}
-          <Button variant="ghost" size="icon" aria-label="设置" title="设置">
-            <Settings className="h-4 w-4" />
-          </Button>
 
           {/* 用户菜单 */}
           {showUserMenu && (
-            <Button variant="ghost" size="icon" aria-label="用户菜单" title="用户菜单">
-              <User className="h-4 w-4" />
-            </Button>
+            <div className="relative">
+              {isAuthenticated ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    className="flex items-center gap-2"
+                    aria-label="用户菜单"
+                  >
+                    <User className="h-4 w-4" />
+                    <span className="hidden sm:inline">{userEmail.split('@')[0]}</span>
+                  </Button>
+
+                  {userMenuOpen && (
+                    <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border z-50">
+                      <div className="p-2">
+                        <div className="px-3 py-2 text-sm text-gray-500 border-b">
+                          {userEmail}
+                        </div>
+                        <Link
+                          to="/settings"
+                          className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 rounded"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <Settings className="h-4 w-4" />
+                          设置
+                        </Link>
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          注销
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <Link to="/auth/login">
+                  <Button variant="ghost" size="sm">
+                    登录
+                  </Button>
+                </Link>
+              )}
+            </div>
           )}
         </div>
       </div>
 
       {/* 移动端导航菜单 */}
       <nav className="border-t bg-background lg:hidden">
-        <div className="container mx-auto max-w-screen-2xl px-4 py-2">
+        <div className="px-6 py-2 w-full">
           <div className="flex items-center justify-around">
-            <Button variant="ghost" size="sm">
-              工作台
-            </Button>
-            <Button variant="ghost" size="sm">
-              模板
-            </Button>
-            <Button variant="ghost" size="sm">
-              项目
-            </Button>
-            <Button variant="ghost" size="sm">
-              文档
-            </Button>
+            <NavItem href="/dashboard" label="工作台" />
+            <NavItem href="/prompts" label="提示词" />
+            <NavItem href="/templates" label="模板" />
+            <NavItem href="/settings" label="设置" />
           </div>
         </div>
       </nav>
     </header>
+  );
+};
+
+/**
+ * NavItem 组件 - 导航菜单项
+ */
+interface NavItemProps {
+  href: string;
+  label: string;
+}
+
+const NavItem: React.FC<NavItemProps> = ({ href, label }) => {
+  const location = useLocation();
+  const isActive = location.pathname === href;
+
+  return (
+    <Link to={href}>
+      <Button
+        variant={isActive ? "secondary" : "ghost"}
+        size="sm"
+        className={cn(
+          "transition-colors",
+          isActive && "bg-blue-100 text-blue-700 hover:bg-blue-200"
+        )}
+      >
+        {label}
+      </Button>
+    </Link>
   );
 };

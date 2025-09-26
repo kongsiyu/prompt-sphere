@@ -81,6 +81,19 @@ parallelization_factor: 3.2
 **Estimated Hours**: 6
 **Dependencies**: Stream A (form), Stream B (editor), Stream C (chat)
 
+### Stream F: 页面框架和索引页
+**Scope**: 实现主应用程序框架（头部、菜单、底部）和空白索引页
+**Files**:
+- `frontend/src/components/layout/AppLayout.tsx`
+- `frontend/src/layouts/AppLayout.tsx`
+- `frontend/src/pages/Dashboard/index.tsx`
+- `frontend/src/router/index.tsx` (更新路由)
+**Agent Type**: general-purpose
+**Can Start**: immediately
+**Estimated Hours**: 4
+**Dependencies**: none
+**Status**: ✅ 已完成
+
 ## Coordination Points
 
 ### Shared Files
@@ -106,7 +119,7 @@ parallelization_factor: 3.2
 **Recommended Approach**: hybrid
 
 **执行策略**:
-1. **Phase 1**: 同时启动Stream A (布局) 和 Stream B (编辑器)
+1. **Phase 1**: 同时启动Stream A (布局)、Stream B (编辑器)和 Stream F (页面框架) ✅ 已完成
 2. **Phase 2**: Stream A 基础完成后，启动Stream C (聊天界面)
 3. **Phase 3**: Stream A & B 完成基础结构后，启动Stream D (状态管理)
 4. **Phase 4**: 核心功能就绪后，启动Stream E (导出和工作流)
@@ -116,11 +129,11 @@ parallelization_factor: 3.2
 
 With parallel execution:
 - Wall time: 15 hours (最长路径: Stream A → Stream C → Stream E + 集成时间)
-- Total work: 50 hours
-- Efficiency gain: 70%
+- Total work: 54 hours (包含 Stream F 的 4 小时)
+- Efficiency gain: 72%
 
 Without parallel execution:
-- Wall time: 50 hours
+- Wall time: 54 hours
 
 ## Notes
 - 这是一个复杂的前端任务，需要仔细的组件设计和状态管理
