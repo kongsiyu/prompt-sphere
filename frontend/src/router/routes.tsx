@@ -7,6 +7,7 @@ const LoginPage = lazy(() => import('../pages/auth/Login'));
 const PromptsPage = lazy(() => import('../pages/prompts/Prompts'));
 const CreatePromptPage = lazy(() => import('../pages/prompts/CreatePrompt'));
 const EditPromptPage = lazy(() => import('../pages/prompts/EditPrompt'));
+const PromptEditorPage = lazy(() => import('../pages/PromptEditor'));
 const TemplatesPage = lazy(() => import('../pages/templates/Templates'));
 const SettingsPage = lazy(() => import('../pages/settings/Settings'));
 const NotFoundPage = lazy(() => import('../pages/NotFound'));
@@ -69,6 +70,34 @@ export const routes: RouteConfig[] = [
     component: EditPromptPage,
     meta: {
       title: '编辑提示词',
+      requiresAuth: true,
+      hideInNav: true,
+      breadcrumb: [
+        { label: '首页', path: '/' },
+        { label: '提示词管理', path: '/prompts' },
+        { label: '编辑提示词', isActive: true }
+      ]
+    }
+  },
+  {
+    path: '/prompt-editor/create',
+    component: PromptEditorPage,
+    meta: {
+      title: '统一提示词创建界面',
+      requiresAuth: true,
+      hideInNav: true,
+      breadcrumb: [
+        { label: '首页', path: '/' },
+        { label: '提示词管理', path: '/prompts' },
+        { label: '创建提示词', isActive: true }
+      ]
+    }
+  },
+  {
+    path: '/prompt-editor/:id/edit',
+    component: PromptEditorPage,
+    meta: {
+      title: '统一提示词编辑界面',
       requiresAuth: true,
       hideInNav: true,
       breadcrumb: [
