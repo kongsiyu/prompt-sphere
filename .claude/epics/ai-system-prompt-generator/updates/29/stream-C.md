@@ -1,3 +1,10 @@
+---
+issue: 29
+stream: 聊天界面和Agent集成功能
+agent: general-purpose
+started: 2025-09-26T02:02:32Z
+status: completed
+---
 # Stream C - 聊天界面和Agent集成功能 实现完成
 
 ## 📋 任务概述

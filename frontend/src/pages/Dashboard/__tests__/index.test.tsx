@@ -242,7 +242,7 @@ describe('Dashboard', () => {
       it('应该有正确的快速操作链接', () => {
         renderDashboard();
 
-        expect(screen.getByTestId('link--prompts-create')).toHaveAttribute('href', '/prompts/create');
+        expect(screen.getByTestId('link--prompts-create')).toHaveAttribute('href', '/prompt-editor/create');
         expect(screen.getByTestId('link--templates')).toHaveAttribute('href', '/templates');
         expect(screen.getByTestId('link--prompts')).toHaveAttribute('href', '/prompts');
       });

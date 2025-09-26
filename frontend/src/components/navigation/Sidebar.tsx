@@ -114,7 +114,7 @@ const Sidebar: React.FC = () => {
             {isAuthenticated && (
               <div className="pt-4 border-t border-gray-200">
                 <Link
-                  to="/prompts/create"
+                  to="/prompt-editor/create"
                   className={`
                     flex items-center px-3 py-2 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors
                     ${isCollapsed ? 'justify-center' : ''}

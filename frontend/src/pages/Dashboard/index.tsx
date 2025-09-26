@@ -89,7 +89,7 @@ const Dashboard: React.FC = () => {
       title: '创建新提示词',
       description: '从零开始创建一个新的AI提示词',
       icon: <Plus className="h-5 w-5" />,
-      href: '/prompts/create',
+      href: '/prompt-editor/create',
       variant: 'primary'
     },
     {

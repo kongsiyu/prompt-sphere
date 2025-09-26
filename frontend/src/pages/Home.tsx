@@ -36,7 +36,7 @@ const Home: React.FC = () => {
       icon: <Zap className="h-8 w-8 text-yellow-600" />,
       title: '快速创建',
       description: '简单易用的界面，快速创建和编辑提示词',
-      link: '/prompts/create'
+      link: '/prompt-editor/create'
     }
   ];
 
