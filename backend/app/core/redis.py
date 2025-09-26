@@ -6,8 +6,8 @@ import time
 from typing import Optional, Any, Dict, Union, Callable, Awaitable
 from urllib.parse import urlparse
 
-import aioredis
-from aioredis import Redis, ConnectionError, TimeoutError
+import redis.asyncio as redis
+from redis.asyncio import Redis, ConnectionError, TimeoutError as RedisTimeoutError
 
 from .config import get_settings
 
@@ -26,7 +26,7 @@ def retry_on_connection_error(max_retries: Optional[int] = None, backoff_factor:
             for attempt in range(_max_retries + 1):
                 try:
                     return await func(self, *args, **kwargs)
-                except (ConnectionError, TimeoutError, OSError) as e:
+                except (ConnectionError, RedisTimeoutError, OSError) as e:
                     last_exception = e
                     if attempt == _max_retries:
                         logger.error(f"Redis操作失败，已重试{_max_retries}次: {e}")
@@ -54,7 +54,7 @@ class RedisClient:
         """Initialize Redis client."""
         self.settings = get_settings()
         self._redis: Optional[Redis] = None
-        self._connection_pool: Optional[aioredis.ConnectionPool] = None
+        self._connection_pool: Optional[redis.ConnectionPool] = None
 
     async def connect(self) -> None:
         """Connect to Redis server."""
@@ -72,7 +72,7 @@ class RedisClient:
                 redis_url = f"redis://{password_part}{self.settings.redis_host}:{self.settings.redis_port}/{self.settings.redis_db}"
 
             # Create connection pool
-            self._connection_pool = aioredis.ConnectionPool.from_url(
+            self._connection_pool = redis.ConnectionPool.from_url(
                 redis_url,
                 max_connections=self.settings.redis_pool_size,
                 socket_timeout=self.settings.redis_timeout,
@@ -81,7 +81,7 @@ class RedisClient:
             )
 
             # Create Redis client
-            self._redis = aioredis.Redis(connection_pool=self._connection_pool)
+            self._redis = redis.Redis(connection_pool=self._connection_pool)
 
             # Test connection
             await self._redis.ping()

@@ -17,11 +17,11 @@ from app.agents.pe_engineer.types import (
 )
 from app.agents.pe_engineer.schemas.requirements import (
     ParsedRequirements, ParsedIntent, ExtractedContext, DomainInfo,
-    TechnicalRequirement, QualityMetrics
+    TechnicalRequirement, QualityMetric
 )
 from app.agents.pe_engineer.schemas.prompts import (
     PromptAnalysis, QualityScore, PromptElement, OptimizationSuggestion,
-    OptimizationResult, VersionComparison
+    PromptOptimizationResult
 )
 
 
@@ -192,7 +192,7 @@ def sample_parsed_requirements_detailed():
                 complexity="low"
             )
         ],
-        quality_metrics=QualityMetrics(
+        quality_metrics=QualityMetric(
             clarity=0.85,
             specificity=0.75,
             completeness=0.80,
@@ -351,7 +351,7 @@ def mock_requirements_parser():
         contexts=[],
         domain=DomainInfo(primary="test_domain", secondary=[], confidence=0.8),
         technical_requirements=[],
-        quality_metrics=QualityMetrics(
+        quality_metrics=QualityMetric(
             clarity=0.8, specificity=0.8, completeness=0.8,
             feasibility=0.8, overall_confidence=0.8
         ),
@@ -369,18 +369,11 @@ def mock_requirements_parser():
 def mock_prompt_optimizer():
     """Mock PromptOptimizer"""
     mock = AsyncMock()
-    mock.optimize_prompt.return_value = OptimizationResult(
-        original_prompt="test",
-        optimized_prompt="optimized test",
-        optimization_applied=True,
-        techniques_used=["clarity"],
-        quality_improvement=0.2,
-        version_comparison=VersionComparison(
-            original_score=7.0,
-            optimized_score=8.4,
-            improvement_percentage=20.0
-        ),
-        metadata={}
+    mock.optimize_prompt.return_value = PromptOptimizationResult(
+        request_id="test_request_123",
+        success=True,
+        optimized_prompt=None,
+        processing_time_ms=150
     )
     return mock
 
