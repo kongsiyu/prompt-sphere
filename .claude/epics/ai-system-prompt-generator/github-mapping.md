@@ -13,5 +13,9 @@ Tasks:
 - #10: 钉钉OAuth Authentication Implementation - https://github.com/kongsiyu/prompt-sphere/issues/10
 - #11: Prompt Management and Versioning System - https://github.com/kongsiyu/prompt-sphere/issues/11
 - #12: Frontend React Application Setup and Routing - https://github.com/kongsiyu/prompt-sphere/issues/12
+- #29: Unified Prompt Creation and Editing Interface - https://github.com/kongsiyu/prompt-sphere/issues/29
+- #30: Prompt Management and Template System - https://github.com/kongsiyu/prompt-sphere/issues/30
+- #31: Frontend-Backend Integration and API Layer - https://github.com/kongsiyu/prompt-sphere/issues/31
+- #32: User Dashboard and Settings Management - https://github.com/kongsiyu/prompt-sphere/issues/32
 
-Synced: 2025-09-22T07:31:39Z
+Synced: 2025-09-25T14:10:59Z

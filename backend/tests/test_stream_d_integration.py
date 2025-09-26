@@ -13,7 +13,7 @@ import pytest
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 from typing import Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class TestServiceError(Exception):
@@ -23,7 +23,7 @@ class TestServiceError(Exception):
         self.message = message
         self.code = code
         self.details = details or {}
-        self.timestamp = datetime.utcnow()
+        self.timestamp = datetime.now(timezone.utc)
 
 
 class TestBaseService:
@@ -59,7 +59,7 @@ class TestBaseService:
             value = data.get(field)
 
             # 必填字段检查
-            if rule.get("required", False) and value is None:
+            if rule.get("required", False) and (value is None or value == ""):
                 errors.append(f"Field '{field}' is required")
                 continue
 
@@ -86,7 +86,7 @@ class TestBaseService:
         return {
             "status": "healthy",
             "service": self.service_name,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
 
@@ -100,7 +100,7 @@ class TestAPIResponse:
             "success": True,
             "data": data,
             "message": message,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "request_id": request_id
         }
 
@@ -114,7 +114,7 @@ class TestAPIResponse:
                 "message": message,
                 "details": details or {}
             },
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "request_id": request_id
         }
 
@@ -382,8 +382,10 @@ class TestErrorHandlingIntegration:
             "email": {"required": True, "type": str}
         }
 
+        api_response = None
         try:
             await service.validate_input(invalid_data, rules)
+            pytest.fail("Expected TestServiceError to be raised")
         except TestServiceError as e:
             # 将服务错误转换为API响应
             api_response = TestAPIResponse.error(
@@ -392,6 +394,7 @@ class TestErrorHandlingIntegration:
                 details=e.details
             )
 
+        assert api_response is not None
         assert api_response["success"] is False
         assert api_response["error"]["code"] == "VALIDATION_ERROR"
         assert "errors" in api_response["error"]["details"]
@@ -425,7 +428,7 @@ class TestServiceIntegration:
             "name": validated_data["name"],
             "email": validated_data["email"],
             "age": validated_data["age"],
-            "created_at": datetime.utcnow().isoformat()
+            "created_at": datetime.now(timezone.utc).isoformat()
         }
 
         # 4. 记录操作完成

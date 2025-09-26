@@ -29,7 +29,7 @@ from app.api import (
 from app.core.config import settings
 from app.core.redis import close_redis_client
 from app.services.base import register_service
-from backend.database.session import session_manager
+from database.session import session_manager
 
 # 配置日志
 logging.basicConfig(

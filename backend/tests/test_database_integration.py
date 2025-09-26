@@ -251,8 +251,8 @@ class TestDatabaseSchema:
         parent_id = result.scalar()
 
         # Insert child record
-        await db_session.execute(text(f
-            "INSERT INTO test_child (parent_id, value) VALUES ({parent_id}, 'child1')"
+        await db_session.execute(text(
+            f"INSERT INTO test_child (parent_id, value) VALUES ({parent_id}, 'child1')"
         ))
         await db_session.commit()
 

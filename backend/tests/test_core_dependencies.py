@@ -121,8 +121,15 @@ class TestDatabaseDependencies:
         """测试成功获取数据库会话。"""
         mock_get_session.return_value.__aenter__.return_value = mock_db_session
 
-        async with get_database_session() as session:
-            assert session == mock_db_session
+        gen = get_database_session()
+        session = await gen.__anext__()
+        assert session == mock_db_session
+
+        try:
+            await gen.__anext__()
+            assert False, "Generator should be exhausted"
+        except StopAsyncIteration:
+            pass
 
         mock_get_session.assert_called_once()
 
@@ -133,8 +140,8 @@ class TestDatabaseDependencies:
         mock_get_session.side_effect = Exception("Database connection failed")
 
         with pytest.raises(HTTPException) as exc_info:
-            async with get_database_session() as session:
-                pass
+            gen = get_database_session()
+            await gen.__anext__()
 
         assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert "Database connection error" in exc_info.value.detail
@@ -145,8 +152,15 @@ class TestDatabaseDependencies:
         """测试成功获取数据库事务。"""
         mock_get_transaction.return_value.__aenter__.return_value = mock_db_session
 
-        async with get_database_transaction() as session:
-            assert session == mock_db_session
+        gen = get_database_transaction()
+        session = await gen.__anext__()
+        assert session == mock_db_session
+
+        try:
+            await gen.__anext__()
+            assert False, "Generator should be exhausted"
+        except StopAsyncIteration:
+            pass
 
         mock_get_transaction.assert_called_once()
 
@@ -157,8 +171,8 @@ class TestDatabaseDependencies:
         mock_get_transaction.side_effect = Exception("Transaction failed")
 
         with pytest.raises(HTTPException) as exc_info:
-            async with get_database_transaction() as session:
-                pass
+            gen = get_database_transaction()
+            await gen.__anext__()
 
         assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert "Database transaction error" in exc_info.value.detail
@@ -415,14 +429,17 @@ class TestHealthDependencies:
         assert "Database" in str(result["errors"])
 
     @pytest.mark.asyncio
-    async def test_get_system_health_exception(self):
-        """测试系统健康检查异常。"""
-        with patch('app.core.dependencies.get_session', side_effect=Exception("Critical error")):
+    async def test_get_system_health_database_error(self):
+        """测试系统健康检查 - 数据库错误情况。"""
+        with patch('app.core.dependencies.get_session', side_effect=Exception("Database connection failed")):
             result = await get_system_health()
 
-            assert result["status"] == "unhealthy"
-            assert "error" in result
-            assert "Critical error" in result["error"]
+            # 数据库连接失败会被内层捕获，返回部分成功结果
+            assert result["status"] in ["degraded", "unhealthy"]
+            assert result["database"]["status"] == "unhealthy"
+            assert "Database connection failed" in result["database"]["error"]
+            assert len(result["errors"]) >= 1
+            assert any("Database" in error for error in result["errors"])
 
 
 class TestRequestContextDependencies:

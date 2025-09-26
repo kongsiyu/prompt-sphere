@@ -35,7 +35,12 @@
       "Read(//d/ProgramData/git/repository/github/kongsiyu/epic-ai-system-prompt-generator/backend/**)",
       "Bash(python -m pytest tests/test_dashscope_api.py -v)",
       "Read(//d/ProgramData/git/repository/github/kongsiyu/epic-ai-system-prompt-generator/**)",
-      "Read(//d/ProgramData/git/repository/github/kongsiyu/prompt-sphere/epic-ai-system-prompt-generator/**)"
+      "Read(//d/ProgramData/git/repository/github/kongsiyu/prompt-sphere/epic-ai-system-prompt-generator/**)",
+      "Bash(python -m pytest tests/test_core_dependencies.py::TestDatabaseDependencies -v --tb=short)",
+      "Bash(python -m pytest tests/test_core_dependencies.py -v --tb=short)",
+      "Read(//e/ProgramData/git/repository/github/kongsiyu/prompt-sphere/epic-ai-system-prompt-generator/**)",
+      "Bash(cat:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
