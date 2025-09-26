@@ -37,17 +37,9 @@ parallelization_factor: 3.2
 **Estimated Hours**: 7
 **Dependencies**: none (相对独立的NLP模块)
 
-### Stream C: 动态表单生成器
-**Scope**: 基于解析的需求生成动态表单，支持多种prompt模式
-**Files**:
-- `epic-ai-system-prompt-generator/backend/app/agents/pe_engineer/FormGenerator.py`
-- `epic-ai-system-prompt-generator/backend/app/agents/pe_engineer/forms/form_builder.py`
-- `epic-ai-system-prompt-generator/backend/app/agents/pe_engineer/forms/field_types.py`
-- `epic-ai-system-prompt-generator/backend/app/agents/pe_engineer/schemas/forms.py`
-**Agent Type**: backend-specialist
-**Can Start**: after requirements parsing structure is defined
-**Estimated Hours**: 6
-**Dependencies**: Stream B (requirements schema)
+### Stream C: 动态表单生成器 [已移除]
+**Status**: ❌ **已移除** - 该功能在实际实现中被确定为不必要
+**Reason**: PE Engineer Agent的核心功能已通过Stream A、B、D充分实现，动态表单生成功能冗余
 
 ### Stream D: Prompt优化引擎
 **Scope**: 实现prompt创建、优化和模板管理功能
@@ -73,7 +65,7 @@ parallelization_factor: 3.2
 **Agent Type**: backend-specialist
 **Can Start**: after core components are implemented
 **Estimated Hours**: 6
-**Dependencies**: Stream A, Stream B, Stream C, Stream D
+**Dependencies**: Stream A, Stream B, Stream D (Stream C removed)
 
 ## Coordination Points
 
@@ -86,9 +78,9 @@ parallelization_factor: 3.2
 ### Sequential Requirements
 必须按顺序执行的步骤:
 1. 基础架构和类型定义 (Stream A) → 其他所有模块
-2. 需求解析 (Stream B) → 表单生成 (Stream C)
-3. 核心功能模块完成 → 集成测试 (Stream E)
-4. 模块集成 → 端到端功能测试
+2. 核心功能模块完成 (Stream A, B, D) → 集成测试 (Stream E)
+3. 模块集成 → 端到端功能测试
+4. Stream C (表单生成) 已确定不需要实现
 
 ## Conflict Risk Assessment
 - **Low Risk**: 模块化设计清晰，各组件相对独立
@@ -100,21 +92,22 @@ parallelization_factor: 3.2
 **Recommended Approach**: hybrid
 
 **执行策略**:
-1. 首先启动Stream A (基础架构) 以建立核心接口
-2. Stream A基础完成后，同时启动Stream B (需求解析) 和 Stream D (Prompt优化)
-3. Stream B核心功能就绪后，启动Stream C (表单生成)
-4. 所有核心模块实现后，启动Stream E (测试)，包括单元测试和集成测试
-5. 最终集成所有组件并进行端到端测试
+1. 首先启动Stream A (基础架构) 以建立核心接口 ✅
+2. Stream A完成后，同时启动Stream B (需求解析) 和 Stream D (Prompt优化) ✅
+3. 所有核心模块实现后，启动Stream E (测试)，包括单元测试和集成测试 ✅
+4. Stream C (表单生成) 在实施过程中确定为不必要，已移除 ❌
+5. 最终集成所有组件并进行端到端测试 ✅
 
 ## Expected Timeline
 
-With parallel execution:
-- Wall time: 9 hours (最长路径: Stream A → Stream B → Stream C + 集成)
-- Total work: 32 hours
-- Efficiency gain: 72%
+With parallel execution (实际完成):
+- Wall time: 7 hours (最长路径: Stream A → Stream B,D → Stream E)
+- Total work: 26 hours (原32小时减去Stream C的6小时)
+- Efficiency gain: 73%
+- Stream C removed: -6 hours (不需要的功能)
 
 Without parallel execution:
-- Wall time: 32 hours
+- Wall time: 26 hours (已调整)
 
 ## Notes
 - 这个Agent实现具有很好的模块化特性，非常适合并行开发
