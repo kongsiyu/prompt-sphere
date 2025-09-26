@@ -1,6 +1,6 @@
 /**
  * 提示词编辑器主页面
- * 统一的提示词创建和编辑界面，包含左右分栏布局
+ * 统一的提示词创建和编辑界面，包含左右分栏布局和AI助手聊天功能
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -10,8 +10,10 @@ import { SplitLayout } from '@/components/layout/SplitLayout';
 import { MetadataForm } from '@/components/forms/MetadataForm';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { ChatInterface } from '@/components/chat';
 import { PromptFormData, EditorViewState, AutoSaveState } from '@/types/prompt';
-import { Edit3, MessageSquare, Eye, Save, ArrowLeft } from 'lucide-react';
+import { AgentType, ChatMode } from '@/types/chat';
+import { Edit3, MessageSquare, Eye, Save, ArrowLeft, Bot, CheckCircle, Zap, RefreshCw } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 
@@ -69,6 +71,11 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({ mode = 'create' }) =
     error: undefined,
   });
 
+  // 聊天相关状态
+  const [chatEnabled, setChatEnabled] = useState(true);
+  const [currentAgent, setCurrentAgent] = useState<AgentType>('pe_engineer');
+  const [currentMode, setCurrentMode] = useState<ChatMode>('create');
+
   // 加载状态
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -92,6 +99,15 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({ mode = 'create' }) =
     }
   }, [mode, id]);
 
+  // 根据编辑器模式设置聊天模式
+  useEffect(() => {
+    if (mode === 'edit' && formData.content) {
+      setCurrentMode('optimize');
+    } else {
+      setCurrentMode('create');
+    }
+  }, [mode, formData.content]);
+
   // 自动保存功能
   useEffect(() => {
     if (!autoSaveState.enabled) return;
@@ -113,9 +129,25 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({ mode = 'create' }) =
       // const response = await promptAPI.getById(promptId);
       // setFormData(response.data);
       console.log('Loading prompt data for ID:', promptId);
+
+      // 模拟加载数据
+      setTimeout(() => {
+        setFormData({
+          title: '示例提示词',
+          description: '这是一个示例提示词的描述',
+          role: 'AI助手',
+          tone: 'professional',
+          capabilities: ['问答', '分析'],
+          constraints: ['保持专业', '简洁明了'],
+          content: '# 示例提示词\n\n你是一个专业的AI助手，请根据用户的问题提供准确的回答。',
+          tags: ['示例', '助手'],
+          language: 'zh',
+          isTemplate: false,
+        });
+        setLoading(false);
+      }, 1000);
     } catch (error) {
       console.error('Failed to load prompt data:', error);
-    } finally {
       setLoading(false);
     }
   };
@@ -201,6 +233,43 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({ mode = 'create' }) =
   const handleSplitPositionChange = (position: number) => {
     setViewState(prev => ({ ...prev, splitPosition: position }));
   };
+
+  // 处理AI助手的回复
+  const handlePromptUpdate = useCallback((newPromptContent: string) => {
+    handleFormDataChange({
+      ...formData,
+      content: newPromptContent
+    });
+  }, [formData, handleFormDataChange]);
+
+  // 处理Agent变化
+  const handleAgentChange = useCallback((agent: AgentType) => {
+    setCurrentAgent(agent);
+  }, []);
+
+  // 处理模式变化
+  const handleModeChange = useCallback((mode: ChatMode) => {
+    setCurrentMode(mode);
+  }, []);
+
+  // 生成当前提示词上下文
+  const generatePromptContext = useCallback(() => {
+    const context = [];
+
+    if (formData.title) context.push(`标题: ${formData.title}`);
+    if (formData.description) context.push(`描述: ${formData.description}`);
+    if (formData.role) context.push(`角色: ${formData.role}`);
+    if (formData.tone) context.push(`语调: ${formData.tone}`);
+    if (formData.capabilities && formData.capabilities.length > 0) {
+      context.push(`能力: ${formData.capabilities.join(', ')}`);
+    }
+    if (formData.constraints && formData.constraints.length > 0) {
+      context.push(`约束: ${formData.constraints.join(', ')}`);
+    }
+    if (formData.content) context.push(`当前内容:\n${formData.content}`);
+
+    return context.join('\n');
+  }, [formData]);
 
   // 渲染左侧面板内容
   const renderLeftPanel = () => {
@@ -290,37 +359,99 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({ mode = 'create' }) =
     );
   };
 
-  // 渲染右侧面板（聊天界面占位）
+  // 渲染右侧面板（聊天界面）
   const renderRightPanel = () => {
+    if (!chatEnabled) {
+      return (
+        <Card className="h-full flex flex-col">
+          <div className="flex items-center gap-2 p-4 border-b">
+            <MessageSquare className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-semibold">AI 助手对话</h2>
+            <div className="ml-auto">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setChatEnabled(true)}
+              >
+                启用聊天
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex-1 flex items-center justify-center text-muted-foreground">
+            <div className="text-center space-y-2">
+              <MessageSquare className="w-12 h-12 mx-auto opacity-50" />
+              <p className="text-sm">聊天功能已禁用</p>
+              <p className="text-xs">点击上方按钮启用 AI 助手</p>
+            </div>
+          </div>
+        </Card>
+      );
+    }
+
     return (
-      <Card className="h-full flex flex-col">
-        <div className="flex items-center gap-2 p-4 border-b">
-          <MessageSquare className="w-5 h-5 text-primary" />
-          <h2 className="text-lg font-semibold">AI 助手对话</h2>
-        </div>
+      <div className="h-full">
+        <ChatInterface
+          defaultAgent={currentAgent}
+          defaultMode={currentMode}
+          layout="embedded"
+          showAgentSelector={true}
+          showModeSelector={true}
+          showSessionList={false}
+          enableFullscreen={false}
+          promptContext={generatePromptContext()}
+          onPromptUpdate={handlePromptUpdate}
+          onAgentChange={handleAgentChange}
+          onModeChange={handleModeChange}
+          onClose={() => setChatEnabled(false)}
+          className="h-full"
+        />
+      </div>
+    );
+  };
 
-        <div className="flex-1 flex items-center justify-center text-muted-foreground">
-          <div className="text-center space-y-2">
-            <MessageSquare className="w-12 h-12 mx-auto opacity-50" />
-            <p className="text-sm">聊天界面即将推出</p>
-            <p className="text-xs">将与 PE Engineer 和 PEQA 智能助手集成</p>
-          </div>
-        </div>
+  // 渲染模式切换按钮
+  const renderModeButtons = () => {
+    if (!chatEnabled) return null;
 
-        <div className="p-4 border-t">
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled className="flex-1">
-              创建模式
-            </Button>
-            <Button variant="outline" size="sm" disabled className="flex-1">
-              优化模式
-            </Button>
-            <Button variant="outline" size="sm" disabled className="flex-1">
-              质量检查
-            </Button>
-          </div>
-        </div>
-      </Card>
+    const modes = [
+      {
+        key: 'create' as ChatMode,
+        name: '创建',
+        icon: <Zap className="w-4 h-4" />,
+        description: '创建新提示词'
+      },
+      {
+        key: 'optimize' as ChatMode,
+        name: '优化',
+        icon: <RefreshCw className="w-4 h-4" />,
+        description: '优化现有提示词'
+      },
+      {
+        key: 'quality_check' as ChatMode,
+        name: '检查',
+        icon: <CheckCircle className="w-4 h-4" />,
+        description: '质量检查'
+      }
+    ];
+
+    return (
+      <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b">
+        <span className="text-sm text-gray-600 dark:text-gray-400">助手模式:</span>
+        {modes.map(({ key, name, icon, description }) => (
+          <Button
+            key={key}
+            size="sm"
+            variant={currentMode === key ? "primary" : "outline"}
+            onClick={() => handleModeChange(key)}
+            className="flex items-center gap-2"
+            title={description}
+          >
+            {icon}
+            {name}
+          </Button>
+        ))}
+      </div>
     );
   };
 
@@ -358,28 +489,46 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({ mode = 'create' }) =
           </div>
         </div>
 
-        {/* 移动端操作按钮 */}
-        {viewState.isMobile && (
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleReset}
-            >
-              重置
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleSave}
-              loading={saving}
-              leftIcon={<Save className="w-4 h-4" />}
-            >
-              保存
-            </Button>
-          </div>
-        )}
+        {/* 自动保存状态指示器 */}
+        <div className="flex items-center gap-3">
+          {autoSaveState.status === 'saving' && (
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <div className="animate-spin w-3 h-3 border border-gray-300 border-t-gray-600 rounded-full" />
+              保存中...
+            </div>
+          )}
+          {autoSaveState.lastSaved && autoSaveState.status === 'saved' && (
+            <div className="text-sm text-green-600">
+              已保存 {new Date(autoSaveState.lastSaved).toLocaleTimeString()}
+            </div>
+          )}
+
+          {/* 移动端操作按钮 */}
+          {viewState.isMobile && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleReset}
+              >
+                重置
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleSave}
+                loading={saving}
+                leftIcon={<Save className="w-4 h-4" />}
+              >
+                保存
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* 模式切换按钮 */}
+      {renderModeButtons()}
 
       {/* 主要内容区域 */}
       <div className="flex-1">

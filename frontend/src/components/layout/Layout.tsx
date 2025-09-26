@@ -133,7 +133,7 @@ export const Layout: React.FC<LayoutProps> = ({
           }
         )}
       >
-        <div className="h-full overflow-y-auto p-4">
+        <div className="h-full overflow-y-auto">
           {sidebar}
         </div>
       </aside>
@@ -172,9 +172,14 @@ export const Layout: React.FC<LayoutProps> = ({
 
     return (
       <main className={containerClasses}>
-        <div className="py-6">
-          {children}
-        </div>
+        {layout === 'sidebar-left' || layout === 'sidebar-right' ? (
+          // 侧边栏布局时，不添加额外的 padding，让内容完全填充
+          children
+        ) : (
+          <div className="py-6">
+            {children}
+          </div>
+        )}
       </main>
     );
   };

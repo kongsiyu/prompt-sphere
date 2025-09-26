@@ -1,6 +1,6 @@
 import React from 'react';
 import { usePageTitle } from '../../hooks/useNavigation';
-import { Search, Filter, FileTemplate, Download } from 'lucide-react';
+import { Search, Filter, File, Download } from 'lucide-react';
 
 /**
  * 模板库页面
@@ -99,7 +99,7 @@ const Templates: React.FC = () => {
                 className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <FileTemplate className="h-8 w-8 text-blue-600" />
+                  <File className="h-8 w-8 text-blue-600" />
                   <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
                     {templateCategories.find(cat => cat.id === template.category)?.name}
                   </span>

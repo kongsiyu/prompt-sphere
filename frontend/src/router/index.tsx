@@ -11,6 +11,7 @@ import { RouteConfig } from '../types/router';
 
 // 布局组件
 import DefaultLayout from '../layouts/DefaultLayout';
+import AppLayout from '../layouts/AppLayout';
 import AuthLayout from '../layouts/AuthLayout';
 import MinimalLayout from '../layouts/MinimalLayout';
 
@@ -54,6 +55,8 @@ const createRouteElement = (route: RouteConfig) => {
  */
 const getLayoutComponent = (layout?: string) => {
   switch (layout) {
+    case 'app':
+      return AppLayout;
     case 'auth':
       return AuthLayout;
     case 'minimal':

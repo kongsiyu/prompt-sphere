@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   Home,
   MessageSquare,
-  FileTemplate,
+  File,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -61,7 +61,8 @@ const Sidebar: React.FC = () => {
   const iconMap: Record<string, React.ReactNode> = {
     Home: <Home className="h-5 w-5" />,
     MessageSquare: <MessageSquare className="h-5 w-5" />,
-    FileTemplate: <FileTemplate className="h-5 w-5" />,
+    FileTemplate: <File className="h-5 w-5" />,
+    File: <File className="h-5 w-5" />,
     Settings: <Settings className="h-5 w-5" />
   };
 
