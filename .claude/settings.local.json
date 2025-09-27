@@ -40,7 +40,9 @@
       "Bash(python -m pytest tests/test_core_dependencies.py -v --tb=short)",
       "Read(//e/ProgramData/git/repository/github/kongsiyu/prompt-sphere/epic-ai-system-prompt-generator/**)",
       "Bash(cat:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Read(//d/ProgramData/git/repository/github/kongsiyu/prompt-sphere/**)",
+      "Read(//d/ProgramData/git/repository/github/kongsiyu/**)"
     ],
     "deny": [],
     "ask": []
