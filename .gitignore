@@ -52,3 +52,7 @@ coverage/
 *.tgz
 *.tar.gz
 .npmrc
+
+*.egg-info
+
+__pycache__/
